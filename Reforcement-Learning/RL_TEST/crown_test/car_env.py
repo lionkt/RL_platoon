@@ -7,10 +7,10 @@ MIN_ACC = -10.0
 MAX_ACC = 6.0
 MAX_V = 60 / 3.6
 TURN_MAX_V = 4.2
-ROAD_LENGTH = MAX_V * 100
+ROAD_LENGTH = MAX_V * 60
 CAR_LENGTH = 5
 LANE_WIDTH = 3.5
-AI_DT = 0.1
+AI_DT = 0.2
 
 DES_PLATOON_INTER_DISTANCE = 5  # 车队的理想间距
 ROLE_SPACE = ['leader', 'follower']
@@ -25,6 +25,7 @@ class car(object):
             role,
             tar_interDis,
             tar_speed,
+            location=None,
             ingaged_in_platoon=None,
             leader=None,
             previousCar=None,
@@ -34,7 +35,11 @@ class car(object):
         self.role = role
         self.speed = 0.0
         self.acc = 0.0
-        self.location = np.zeros((1, 2))
+        if not location:
+            self.location = np.zeros((1, 2))
+        else:
+            self.location = location[:]
+
         self.target_interDis = tar_interDis
         self.target_speed = tar_speed
         self.ingaged_in_platoon = ingaged_in_platoon if ingaged_in_platoon else False  # 默认不参加
@@ -76,9 +81,9 @@ class car(object):
     # 单纯计算前车和自己的距离，不含车长
     def __calc_pure_interDistance(self, previous):
         if (not previous):
-            return ROAD_LENGTH - self.location[0, 1]
+            return ROAD_LENGTH - self.location[1]
         # assert  previous.__class__
-        return previous.location[0, 1] - self.location[0, 1] - self.length - previous.length
+        return previous.location[1] - self.location[1] - self.length / 2 - previous.length / 2
 
     # ACC的跟驰方法
     def __follow_car_ACC(self, pure_interval, previous):
@@ -249,21 +254,33 @@ class car(object):
                 self.acc = MAX_jerk * AI_DT + old_acc
         if self.acc < MIN_ACC:
             self.acc = MIN_ACC
+        if self.acc > MAX_ACC:
+            self.acc = MAX_ACC
+
+        # 限制加速的幅度
+        # high_ = car.__engine_speed_up_acc_curve(self, self.speed, p=0.3)
+        # if (self.acc > high_*1.5):
+        #     self.acc = high_
+
         # 存储本次的数据
         self.accData.append(self.acc)
         self.speedData.append(self.speed)
-        self.locationData.append(self.location)
+        loc = self.location[:]
+        self.locationData.append(loc)
 
     # 更新车辆的运动学信息
     def update_car_info(self, time_per_dida_I):
         old_speed = self.speed
         old_location = self.location
         self.speed = self.speed + time_per_dida_I * self.acc
-        self.location[0, 1] = self.location[0, 1] + self.speed * time_per_dida_I
+        self.location[1] = self.location[1] + self.speed * time_per_dida_I
 
     def plot_data(self):
         import matplotlib.pyplot as plt
         plt.plot(np.arange(len(self.speedData)), self.speedData)
+        plt.plot(np.arange(len(self.accData)), self.accData)
+        locationData = np.array(self.locationData)
+        plt.plot(np.arange(len(locationData[:,1])), locationData[:,1])    #只有numpy才支持这样切片，list不支持
         plt.ylabel('speed')
         plt.xlabel('time_steps')
         plt.show()
