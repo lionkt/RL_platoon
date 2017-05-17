@@ -37,26 +37,41 @@ class car(object):
         self.location = np.zeros((1, 2))
         self.target_interDis = tar_interDis
         self.target_speed = tar_speed
-        self.ingaged_in_platoon = ingaged_in_platoon
+        self.ingaged_in_platoon = ingaged_in_platoon if ingaged_in_platoon else False  # 默认不参加
         self.leader = leader
         self.previousCar = previousCar
         self.length = CAR_LENGTH if not car_length else car_length
 
+        # 暂时用来存储，方便画图
+        self.accData = []
+        self.speedData = []
+        self.locationData = []
+
     # 用acc-speed curve做限幅
-    def __engine_speed_up_acc_curve(self, p):
+    def __engine_speed_up_acc_curve(self, speed, p):
         acc_max = MAX_ACC
         v_max = MAX_V
         m = (v_max * p - v_max + v_max * sp.sqrt(1 - p)) / p
         k = (1 - p) * acc_max / m / m
-        return -k * (self.speed - m) * (self.speed - m) + acc_max
+        calcValue = -k * (speed - m) * (speed - m) + acc_max
+        return calcValue
 
     # 用acc-speed curve做限幅
-    def __engine_slow_down_acc_curve(self, p):
+    def __engine_slow_down_acc_curve(self, speed, p):
         acc_max = MAX_ACC
         v_max = MAX_V
         m = v_max / (sp.sqrt(p) + 1)
         k = -MIN_ACC / m / m
-        return k * (self.speed - m) * (self.speed - m) + MIN_ACC
+        calcValue = k * (speed - m) * (speed - m) + MIN_ACC
+        return calcValue
+
+    # 启动运行的函数
+    def __excute_foward(self):
+        if self.speed >= MAX_V:
+            self.acc = 0
+        else:
+            temp_a = car.__engine_speed_up_acc_curve(self, self.speed, p=0.3)
+            self.acc = temp_a
 
     # 单纯计算前车和自己的距离，不含车长
     def __calc_pure_interDistance(self, previous):
@@ -105,7 +120,7 @@ class car(object):
         d_epsilon_i = self.speed - previous.speed
         # 核心公式
         tem_a = alpha_1 * pre_acc + alpha_2 * leader_acc + alpha_3 * d_epsilon_i + alpha_4 * (
-        self.speed - previous.speed) + alpha_5 * epsilon_i
+            self.speed - previous.speed) + alpha_5 * epsilon_i
         # 限幅
         if (tem_a > MAX_ACC):
             self.acc = MAX_ACC
@@ -114,31 +129,141 @@ class car(object):
         else:
             self.acc = tem_a
 
-    def follow_car_for_platoon(self, STRATEGY, precious):
-        temp_a = 0.0
-        if (not precious):
+    def __follow_car_for_platoon(self, STRATEGY, previous):
+        temp_a = MAX_ACC
+        if (not previous):
             # 如果前车为空，说明自己是leader
             if (self.speed <= TURN_MAX_V):
-                temp_a = self.__engine_speed_up_acc_curve(p=0.3)
+                temp_a = car.__engine_speed_up_acc_curve(self, self.speed, p=0.3)
             elif (self.speed > MAX_V):
                 delta_v = sp.abs(self.speed - MAX_V)
-                temp_a = -self.__engine_speed_up_acc_curve(self.speed - delta_v) * 0.5
+                temp_a = -car.__engine_speed_up_acc_curve(self, self.speed - delta_v, p=0.3) * 0.5
         else:
             v1 = self.speed  # 自己的速度
-            v2 = precious.speed  # 前车的速度
-            if (precious.acc < 0.0):
-                v2 += AI_DT * precious.acc
+            v2 = previous.speed  # 前车的速度
+            if (previous.acc < 0.0):
+                v2 += AI_DT * previous.acc
             v1 = v1 if v1 > 0 else 0.0
             v2 = v2 if v2 > 0 else 0.0
-            s = self.__calc_pure_interDistance(precious)
+            s = car.__calc_pure_interDistance(self, previous)
 
             # 根据策略选择跟驰的方式
-            if (STRATEGY == 'ACC'):
-                self.__follow_car_ACC(s, precious)
-            elif (STRATEGY == 'CACC'):
+            assert self.ingaged_in_platoon, '在follow_car_for_platoon中，ingaged_in_platoon出现了错误'
+            # 如果参加了车队
+            if STRATEGY == 'ACC':
+                car.__follow_car_ACC(self, s, previous)
+            elif STRATEGY == 'CACC':
                 if (not self.leader) or (self.id == self.leader.id):
-                    self.__follow_car_ACC(s, precious)  # 调用ACC来补救
+                    car.__follow_car_ACC(self, s, previous)  # 调用ACC来补救
                 else:
-                    self.__follow_car_CACC(s, precious)  # 调用正宗的CACC
+                    car.__follow_car_CACC(self, s, previous)  # 调用正宗的CACC
+            elif STRATEGY == 'RL':
+                ''
 
+        # 限幅
+        if temp_a > MAX_ACC:
+            self.acc = MAX_ACC
+        elif temp_a < MIN_ACC:
+            self.acc = MIN_ACC
+        if temp_a < self.acc:
+            self.acc = temp_a
 
+    # 不参与车队的跟驰
+    def __follow_car(self, previous):
+        temp_a = MAX_ACC
+        if not previous:
+            # 如果前车为空，说明自己是leader
+            if self.speed <= TURN_MAX_V:
+                temp_a = car.__engine_speed_up_acc_curve(self, self.speed, p=0.3)
+            elif self.speed > MAX_V:
+                delta_v = sp.abs(self.speed - MAX_V)
+                temp_a = -car.__engine_speed_up_acc_curve(self, self.speed - delta_v, p=0.3) * 0.5
+        else:
+            v1 = self.speed  # 自己的速度
+            v2 = previous.speed  # 前车的速度
+            if previous.acc < 0.0:
+                v2 += AI_DT * previous.acc
+            v1 = v1 if v1 > 0 else 0.0
+            v2 = v2 if v2 > 0 else 0.0
+            s = car.__calc_pure_interDistance(self, previous)
+            safer_distance = DES_PLATOON_INTER_DISTANCE
+            follow_dis = self.length / 4.47 * v1 + safer_distance
+            s -= follow_dis
+            if s <= 0.0:
+                temp_a = MIN_ACC
+            else:
+                temp_a = 2.0 * (s / 2.0 - v1 * AI_DT) / (AI_DT * AI_DT)
+
+            if s <= follow_dis:
+                if temp_a > 0.0:
+                    temp_a /= 2.0
+
+        # 限幅
+        if temp_a > MAX_ACC:
+            self.acc = MAX_ACC
+        elif temp_a < MIN_ACC:
+            self.acc = MIN_ACC
+        if temp_a < self.acc:
+            self.acc = temp_a
+
+    # 获取前车--为了简化起见，直接判断ID，目前假定车辆的是头车ID=0，然后后面的车依次递增
+    def __get_previous_car(self, CarList):
+        ''
+        if self.id == 0:
+            return None
+        else:
+            index = self.id - 1
+            return CarList[index]
+
+    # 车辆运动学的主函数
+    def calculate(self, CarList):
+        old_acc = self.acc
+        alpha = 0.6  # 动窗口的系数
+        alpha_2 = 0.8  # 从负的acc过度到正的acc的系数
+        # 启动车辆
+        car.__excute_foward(self)
+        # 车辆跟驰
+        precar = car.__get_previous_car(self, CarList)
+        if self.ingaged_in_platoon:
+            car.__follow_car_for_platoon(self, 'ACC', precar)  # 先默认车队的跟驰成员采用ACC方法
+        else:
+            car.__follow_car(self, precar)
+
+        # 减速限制函数，控制在包络线的范围内
+        if self.acc < 0.0:
+            low_ = car.__engine_slow_down_acc_curve(self, self.speed, p=0.6)
+            if self.acc < low_ and low_ <= 0.0:
+                self.acc = low_
+            if self.acc < MIN_ACC:
+                self.acc = MIN_ACC
+            if np.abs(self.acc - MIN_ACC) <= 0.0:
+                self.acc = old_acc + alpha + (1 - alpha) * self.acc  # 窗口平滑处理
+        # 添加jerk限制函数
+        beta = 0.7
+        jerk_cur = (self.acc - old_acc) / AI_DT
+        MAX_jerk = beta * MAX_ACC / AI_DT
+        if np.abs(jerk_cur) > MAX_jerk:
+            if self.acc <= 0.0:
+                self.acc = -MAX_jerk * AI_DT + old_acc
+            else:
+                self.acc = MAX_jerk * AI_DT + old_acc
+        if self.acc < MIN_ACC:
+            self.acc = MIN_ACC
+        # 存储本次的数据
+        self.accData.append(self.acc)
+        self.speedData.append(self.speed)
+        self.locationData.append(self.location)
+
+    # 更新车辆的运动学信息
+    def update_car_info(self, time_per_dida_I):
+        old_speed = self.speed
+        old_location = self.location
+        self.speed = self.speed + time_per_dida_I * self.acc
+        self.location[0, 1] = self.location[0, 1] + self.speed * time_per_dida_I
+
+    def plot_data(self):
+        import matplotlib.pyplot as plt
+        plt.plot(np.arange(len(self.speedData)), self.speedData)
+        plt.ylabel('speed')
+        plt.xlabel('time_steps')
+        plt.show()
