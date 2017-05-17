@@ -37,7 +37,7 @@ REPLACE_ITER_C = 1000
 MEMORY_CAPACITY = 10000
 BATCH_SIZE = 16
 VAR_MIN = 0.1
-RENDER = True
+RENDER = False
 LOAD = False
 MODE = ['easy', 'hard']
 n_model = 1
@@ -256,7 +256,7 @@ def train():
     if os.path.isdir(path): shutil.rmtree(path)
     os.mkdir(path)
     ckpt_path = os.path.join('./'+MODE[n_model], 'DDPG.ckpt')
-    save_path = saver.save(sess, ckpt_path, write_meta_graph=False)
+    save_path = saver.save(sess, ckpt_path, write_meta_graph=True)
     print("\nSave Model %s\n" % save_path)
 
 
