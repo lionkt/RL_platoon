@@ -280,7 +280,7 @@ class car(object):
         plt.plot(np.arange(len(self.speedData)), self.speedData)
         plt.plot(np.arange(len(self.accData)), self.accData)
         locationData = np.array(self.locationData)
-        plt.plot(np.arange(len(locationData[:,1])), locationData[:,1])    #只有numpy才支持这样切片，list不支持
+        # plt.plot(np.arange(len(locationData[:,1])), locationData[:,1])    #只有numpy才支持这样切片，list不支持
         plt.ylabel('speed')
         plt.xlabel('time_steps')
         plt.show()
