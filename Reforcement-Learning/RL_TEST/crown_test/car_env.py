@@ -10,14 +10,20 @@ TURN_MAX_V = 4.2
 ROAD_LENGTH = MAX_V * 60
 CAR_LENGTH = 5
 LANE_WIDTH = 3.5
-AI_DT = 0.2
+AI_DT = 0.2  # 信息决策的步长
+UPDATA_TIME_PER_DIDA = 0.03  # 在c++版本的仿真平台的3D工程中，取的时间步长是0.03
 
-START_LEADER_TEST_DISTANCE = 500
+START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 2
 EQUAL_TO_ZERO_SPEEED = 0.2
 
 DES_PLATOON_INTER_DISTANCE = 5  # 车队的理想间距
 ROLE_SPACE = ['leader', 'follower']
 FOLLOW_STRATEGY = ['ACC', 'CACC', 'RL']
+
+# 强化学习相关的变量
+action_single_step = 1  # 动作空间的步长
+ACTION_SPACE = list(np.arange(MIN_ACC, MAX_ACC, action_single_step))
+TIME_TAG_UP_BOUND = 60.0
 
 
 # define car
@@ -169,8 +175,6 @@ class car(object):
                     car.__follow_car_ACC(self, s, previous)  # 调用ACC来补救
                 else:
                     car.__follow_car_CACC(self, s, previous)  # 调用正宗的CACC
-            elif STRATEGY == 'RL':
-                ''
 
         # 限幅
         if temp_a > MAX_ACC:
@@ -227,8 +231,29 @@ class car(object):
             index = self.id - 1
             return CarList[index]
 
+    # 构建测试场景
+    def __test_scenario(self, TEST_SCENARIO, time_tag):
+        if TEST_SCENARIO == 'leader_sin_wave':
+            SIN_WAVE_A = 2.0
+            SIN_WAVE_T = 8.0
+            if self.role == 'leader':
+                if self.location[1] >= START_LEADER_TEST_DISTANCE:
+                    if self.start_test == False:
+                        self.sin_wave_clock = time_tag
+                        self.start_test = True
+                    self.acc = -SIN_WAVE_A * np.sin((time_tag - self.sin_wave_clock) / SIN_WAVE_T * 2 * np.pi)
+        elif TEST_SCENARIO == 'leader_stop':
+            if self.role == 'leader':
+                if self.location[1] >= START_LEADER_TEST_DISTANCE:
+                    if self.start_test == False:
+                        self.start_test = True
+                    if self.speed > EQUAL_TO_ZERO_SPEEED:
+                        self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.8)
+                    else:
+                        self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.9)
+
     # 车辆运动学的主函数
-    def calculate(self, CarList, STARTEGEY, time_tag):
+    def calculate(self, CarList, STARTEGEY, time_tag, action=None):
         # 存储上次的数据
         self.accData.append(self.acc)
         self.speedData.append(self.speed)
@@ -238,20 +263,30 @@ class car(object):
         old_acc = self.acc
         alpha = 0.6  # 动窗口的系数
 
-        # 启动车辆
-        car.__excute_foward(self)
+        # 如果运行reinforcement-learning
+        if STARTEGEY == 'RL' and self.role == 'follower':
+            # 如果运行reinforcement-learning
+            assert (action != None) and (action >= 0), '在RL中输入的action为空'
+            self.acc = ACTION_SPACE[action]  # 把输入的action当作下标，从动作空间中取值
 
-        if self.start_test == True and self.role == 'leader':
-            car.__test_scenario(self, 'leader_sin_wave', time_tag)
         else:
-            # 车辆跟驰
-            precar = car.__get_previous_car(self, CarList)
-            if self.ingaged_in_platoon:
-                car.__follow_car_for_platoon(self, STARTEGEY, precar)  # 先默认车队的跟驰成员采用ACC方法
+            # 非RL，或者RL下的leader
+            # 启动车辆
+            car.__excute_foward(self)
+            # 跟驰，或者启动测试
+            # test_method = 'leader_sin_wave'
+            test_method = 'leader_stop'
+            if self.start_test == True and self.role == 'leader':
+                car.__test_scenario(self, test_method, time_tag)
             else:
-                car.__follow_car(self, precar)
-            # 还是要执行一次测试，然后才能跳过follow
-            car.__test_scenario(self, 'leader_sin_wave', time_tag)
+                # 车辆跟驰
+                precar = car.__get_previous_car(self, CarList)
+                if self.ingaged_in_platoon:
+                    car.__follow_car_for_platoon(self, STARTEGEY, precar)  # 先默认车队的跟驰成员采用ACC方法
+                else:
+                    car.__follow_car(self, precar)
+                # 还是要执行一次测试，然后才能跳过follow
+                car.__test_scenario(self, test_method, time_tag)
 
         # 减速限制函数，控制在包络线的范围内
         if self.acc < 0.0:
@@ -276,13 +311,8 @@ class car(object):
         if self.acc > MAX_ACC:
             self.acc = MAX_ACC
 
-            # 限制加速的幅度
-            # high_ = car.__engine_speed_up_acc_curve(self, self.speed, p=0.3)
-            # if (self.acc > high_*1.5):
-            #     self.acc = high_
-
     # 更新车辆的运动学信息
-    def update_car_info(self, time_per_dida_I):
+    def update_car_info(self, time_per_dida_I, action=None):
         last_acc = self.accData[-1]
         last_speed = self.speedData[-1]
         self.speed = self.speed + time_per_dida_I * self.acc
@@ -290,28 +320,91 @@ class car(object):
             self.speed = 0
         self.location[1] = self.location[1] + self.speed * time_per_dida_I
 
-    # 构建测试场景
-    def __test_scenario(self, TEST_SCENARIO, time_tag):
-        if TEST_SCENARIO == 'leader_sin_wave':
-            SIN_WAVE_A = 2.0
-            SIN_WAVE_T = 8.0
-            if self.role == 'leader':
-                if self.location[1] >= START_LEADER_TEST_DISTANCE:
-                    if self.start_test == False:
-                        self.sin_wave_clock = time_tag
-                        self.start_test = True
-                    self.acc = -SIN_WAVE_A * np.sin((time_tag - self.sin_wave_clock) / SIN_WAVE_T * 2 * np.pi)
-        elif TEST_SCENARIO == 'leader_stop':
-            if self.role == 'leader':
-                if self.location[1] >= START_LEADER_TEST_DISTANCE:
-                    if self.start_test == False:
-                        self.start_test = True
-                    if self.speed > EQUAL_TO_ZERO_SPEEED:
-                        self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.8)
-                    else:
-                        self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.9)
 
-    # 设置自己的leader
-    def set_leader(self, leader):
-        assert not leader, '输入的leader空'
-        self.leader = leader
+## car类相关的外部函数 ##
+# 根据build_platoon，更新是否加入platoon的信息
+def CarList_update_platoon_info(Carlist, des_platoon_size, build_platoon):
+    if build_platoon == False:
+        for single_car in Carlist:
+            single_car.ingaged_in_platoon = False
+    else:
+        for single_car in Carlist:
+            single_car.leader = Carlist[0]
+        if len(Carlist) < des_platoon_size:
+            for single_car in Carlist:
+                single_car.ingaged_in_platoon = False
+        else:
+            for single_car in Carlist:
+                single_car.ingaged_in_platoon = True
+
+
+# 计算运动学参数
+def CarList_calculate(Carlist, STARTEGEY, time_tag, action):
+    for single_car in Carlist:
+        single_car.calculate(Carlist, STARTEGEY, time_tag, action)
+
+
+# 更新运动学信息的核心函数
+def CarList_update_info_core(Carlist, time_per_dida_I):
+    for single_car in Carlist:
+        single_car.update_car_info(time_per_dida_I)
+
+
+# 根据动作值步进更新，仅用于RL
+def step_next(Carlist, time_tag, action):
+    CarList_calculate(Carlist, STARTEGEY='RL', time_tag=time_tag, action=action)  # 将输入的动作用于运算
+    turns = 0
+    done = False
+    while turns <= AI_DT:
+        CarList_update_info_core(Carlist, UPDATA_TIME_PER_DIDA)
+        turns += UPDATA_TIME_PER_DIDA
+
+    # 设计终止条件
+    # 1.时间到头了
+    info = ''
+    if time_tag >= TIME_TAG_UP_BOUND:
+        info = 'time_end'
+        done = True
+    # 2.两个车基本上撞在一起了
+    for single_car in Carlist:
+        if single_car.id == 0 or single_car.role == 'leader':
+            continue
+        else:
+            if Carlist[0].location[1] - single_car.location[1] - Carlist[0].length / 2 - single_car.length / 2 <= 0.05:
+                info = 'crash'
+                done = True
+                break
+
+    # 设计状态值
+    observation = []
+    for single_car in Carlist:
+        observation.append(single_car.speed)
+        observation.append(single_car.location[1])
+    observation = np.array(observation)
+    return observation, done, info
+
+
+# 计算单步的奖励
+def get_reward(observation):
+    # 暂时只考虑1个leader+1个follower
+    leader_v = observation[0]
+    leader_y = observation[1]
+    follower_v = observation[2]
+    follower_y = observation[3]
+    pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
+    r1 = (pure_interDistance - DES_PLATOON_INTER_DISTANCE) / DES_PLATOON_INTER_DISTANCE  # 由距离产生
+    r2 = -(leader_v - follower_v) / leader_v  # 由速度产生
+    return r1 * 0.01 + r2 * 0.01
+
+
+# 初始化状态值
+def reset(CarList):
+    obs = []
+    for single_car in CarList:
+        if single_car.id == 0 or single_car.role == 'leader':
+            obs.append(0)
+            obs.append(50)
+        else:
+            obs.append(0)
+            obs.append(25)
+    return np.array(obs)
