@@ -275,12 +275,4 @@ class car(object):
         self.speed = self.speed + time_per_dida_I * self.acc
         self.location[1] = self.location[1] + self.speed * time_per_dida_I
 
-    def plot_data(self):
-        import matplotlib.pyplot as plt
-        plt.plot(np.arange(len(self.speedData)), self.speedData)
-        plt.plot(np.arange(len(self.accData)), self.accData)
-        locationData = np.array(self.locationData)
-        # plt.plot(np.arange(len(locationData[:,1])), locationData[:,1])    #只有numpy才支持这样切片，list不支持
-        plt.ylabel('speed')
-        plt.xlabel('time_steps')
-        plt.show()
+
