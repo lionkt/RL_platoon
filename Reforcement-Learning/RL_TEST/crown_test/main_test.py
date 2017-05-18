@@ -11,31 +11,47 @@ time_tag = 0.0
 def plot_data(CarList_I):
     max_speed_length = 0
     max_acc_length = 0
+    max_location_length = 0
     for single_car in CarList_I:
-        max_speed_length = len(single_car.speedData) if max_speed_length > len(
+        max_speed_length = len(single_car.speedData) if max_speed_length < len(
             single_car.speedData) else max_speed_length
-        max_acc_length = len(single_car.speedData) if max_acc_length > len(single_car.speedData) else max_acc_length
+        max_acc_length = len(single_car.speedData) if max_acc_length < len(single_car.speedData) else max_acc_length
+        max_location_length = len(single_car.locationData) if max_location_length < len(
+            single_car.locationData) else max_location_length
 
     plt.figure(0)
     for single_car in CarList_I:
-        plt.plot(np.arange(len(single_car.speedData)), single_car.speedData)
+        if max_speed_length > len(single_car.speedData):
+            data = list(np.zeros(max_speed_length - len(single_car.speedData))) + single_car.speedData
+        else:
+            data = single_car.speedData
+        plt.plot(np.arange(max_speed_length), data)
     plt.ylabel('speed')
     plt.xlabel('time_steps')
     # plt.show()
 
     plt.figure(1)
     for single_car in CarList_I:
-        plt.plot(np.arange(len(single_car.accData)), single_car.accData)
+        if max_acc_length > len(single_car.accData):
+            data = list(np.zeros(max_acc_length - len(single_car.accData))) + single_car.accData
+        else:
+            data = single_car.accData
+        plt.plot(np.arange(max_acc_length), data)
     plt.ylabel('acc')
     plt.xlabel('time_steps')
     # plt.show()
 
-    plt.figure(2)
-    for single_car in CarList_I:
-        locationData_plt = np.array(single_car.locationData)
-        plt.plot(np.arange(len(locationData_plt[:, 1])), locationData_plt[:, 1])  # 只有numpy才支持这样切片，list不支持
-    plt.ylabel('location')
-    plt.xlabel('time_steps')
+    # plt.figure(2)
+    # for single_car in CarList_I:
+    #     locationData_plt = np.array(single_car.locationData)
+    #     if max_location_length > len(single_car.locationData):
+    #         data = list(np.zeros(max_location_length - len(single_car.locationData))) + locationData_plt[:,
+    #                                                                               1]  # 只有numpy才支持这样切片，list不支持
+    #     else:
+    #         data = locationData_plt[:, 1]
+    #     plt.plot(np.arange(max_location_length), data)
+    # plt.ylabel('location')
+    # plt.xlabel('time_steps')
     plt.show()
 
 
