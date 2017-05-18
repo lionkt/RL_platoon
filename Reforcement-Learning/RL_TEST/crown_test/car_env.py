@@ -141,7 +141,7 @@ class car(object):
             if (self.speed <= TURN_MAX_V):
                 temp_a = car.__engine_speed_up_acc_curve(self, self.speed, p=0.3)
             elif (self.speed > MAX_V):
-                delta_v = sp.abs(self.speed - MAX_V)
+                delta_v = np.abs(self.speed - MAX_V)
                 temp_a = -car.__engine_speed_up_acc_curve(self, self.speed - delta_v, p=0.3) * 0.5
         else:
             v1 = self.speed  # 自己的速度
@@ -221,16 +221,21 @@ class car(object):
             return CarList[index]
 
     # 车辆运动学的主函数
-    def calculate(self, CarList):
+    def calculate(self, CarList, STARTEGEY):
+        # 存储上次的数据
+        self.accData.append(self.acc)
+        self.speedData.append(self.speed)
+        loc = self.location[:]
+        self.locationData.append(loc)
+
         old_acc = self.acc
         alpha = 0.6  # 动窗口的系数
-        alpha_2 = 0.8  # 从负的acc过度到正的acc的系数
         # 启动车辆
         car.__excute_foward(self)
         # 车辆跟驰
         precar = car.__get_previous_car(self, CarList)
         if self.ingaged_in_platoon:
-            car.__follow_car_for_platoon(self, 'ACC', precar)  # 先默认车队的跟驰成员采用ACC方法
+            car.__follow_car_for_platoon(self, STARTEGEY, precar)  # 先默认车队的跟驰成员采用ACC方法
         else:
             car.__follow_car(self, precar)
 
@@ -242,7 +247,7 @@ class car(object):
             if self.acc < MIN_ACC:
                 self.acc = MIN_ACC
             if np.abs(self.acc - MIN_ACC) <= 0.0:
-                self.acc = old_acc + alpha + (1 - alpha) * self.acc  # 窗口平滑处理
+                self.acc = old_acc * alpha + (1 - alpha) * self.acc  # 窗口平滑处理
         # 添加jerk限制函数
         beta = 0.7
         jerk_cur = (self.acc - old_acc) / AI_DT
@@ -257,22 +262,16 @@ class car(object):
         if self.acc > MAX_ACC:
             self.acc = MAX_ACC
 
-        # 限制加速的幅度
-        # high_ = car.__engine_speed_up_acc_curve(self, self.speed, p=0.3)
-        # if (self.acc > high_*1.5):
-        #     self.acc = high_
-
-        # 存储本次的数据
-        self.accData.append(self.acc)
-        self.speedData.append(self.speed)
-        loc = self.location[:]
-        self.locationData.append(loc)
+            # 限制加速的幅度
+            # high_ = car.__engine_speed_up_acc_curve(self, self.speed, p=0.3)
+            # if (self.acc > high_*1.5):
+            #     self.acc = high_
 
     # 更新车辆的运动学信息
     def update_car_info(self, time_per_dida_I):
-        old_speed = self.speed
-        old_location = self.location
+        last_acc = self.accData[-1]
+        last_speed = self.speedData[-1]
         self.speed = self.speed + time_per_dida_I * self.acc
+        if self.speed <= 0:
+            self.speed = 0
         self.location[1] = self.location[1] + self.speed * time_per_dida_I
-
-
