@@ -12,6 +12,9 @@ CAR_LENGTH = 5
 LANE_WIDTH = 3.5
 AI_DT = 0.2
 
+START_LEADER_TEST_DISTANCE = 500
+EQUAL_TO_ZERO_SPEEED = 0.2
+
 DES_PLATOON_INTER_DISTANCE = 5  # 车队的理想间距
 ROLE_SPACE = ['leader', 'follower']
 FOLLOW_STRATEGY = ['ACC', 'CACC', 'RL']
@@ -46,6 +49,10 @@ class car(object):
         self.leader = leader
         self.previousCar = previousCar
         self.length = CAR_LENGTH if not car_length else car_length
+
+        # 构建测试环境
+        self.start_test = False
+        self.sin_wave_clock = 0.0
 
         # 暂时用来存储，方便画图
         self.accData = []
@@ -96,7 +103,7 @@ class car(object):
 
         # 固定车头时距的跟驰方式
         sigma = -pure_interval + T * v1
-        tem_a = -(epsilon + lam_para + sigma) / T
+        tem_a = -(epsilon + lam_para * sigma) / T
         # 限幅
         if (tem_a > MAX_ACC):
             self.acc = MAX_ACC
@@ -221,7 +228,7 @@ class car(object):
             return CarList[index]
 
     # 车辆运动学的主函数
-    def calculate(self, CarList, STARTEGEY):
+    def calculate(self, CarList, STARTEGEY, time_tag):
         # 存储上次的数据
         self.accData.append(self.acc)
         self.speedData.append(self.speed)
@@ -230,14 +237,21 @@ class car(object):
 
         old_acc = self.acc
         alpha = 0.6  # 动窗口的系数
+
         # 启动车辆
         car.__excute_foward(self)
-        # 车辆跟驰
-        precar = car.__get_previous_car(self, CarList)
-        if self.ingaged_in_platoon:
-            car.__follow_car_for_platoon(self, STARTEGEY, precar)  # 先默认车队的跟驰成员采用ACC方法
+
+        if self.start_test == True and self.role == 'leader':
+            car.__test_scenario(self, 'leader_sin_wave', time_tag)
         else:
-            car.__follow_car(self, precar)
+            # 车辆跟驰
+            precar = car.__get_previous_car(self, CarList)
+            if self.ingaged_in_platoon:
+                car.__follow_car_for_platoon(self, STARTEGEY, precar)  # 先默认车队的跟驰成员采用ACC方法
+            else:
+                car.__follow_car(self, precar)
+            # 还是要执行一次测试，然后才能跳过follow
+            car.__test_scenario(self, 'leader_sin_wave', time_tag)
 
         # 减速限制函数，控制在包络线的范围内
         if self.acc < 0.0:
@@ -275,3 +289,29 @@ class car(object):
         if self.speed <= 0:
             self.speed = 0
         self.location[1] = self.location[1] + self.speed * time_per_dida_I
+
+    # 构建测试场景
+    def __test_scenario(self, TEST_SCENARIO, time_tag):
+        if TEST_SCENARIO == 'leader_sin_wave':
+            SIN_WAVE_A = 2.0
+            SIN_WAVE_T = 8.0
+            if self.role == 'leader':
+                if self.location[1] >= START_LEADER_TEST_DISTANCE:
+                    if self.start_test == False:
+                        self.sin_wave_clock = time_tag
+                        self.start_test = True
+                    self.acc = -SIN_WAVE_A * np.sin((time_tag - self.sin_wave_clock) / SIN_WAVE_T * 2 * np.pi)
+        elif TEST_SCENARIO == 'leader_stop':
+            if self.role == 'leader':
+                if self.location[1] >= START_LEADER_TEST_DISTANCE:
+                    if self.start_test == False:
+                        self.start_test = True
+                    if self.speed > EQUAL_TO_ZERO_SPEEED:
+                        self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.8)
+                    else:
+                        self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.9)
+
+    # 设置自己的leader
+    def set_leader(self, leader):
+        assert not leader, '输入的leader空'
+        self.leader = leader

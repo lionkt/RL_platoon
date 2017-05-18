@@ -2,7 +2,7 @@ import car_env as car_env
 import numpy as np
 import matplotlib.pyplot as plt
 
-SIM_END_DISTANCE = car_env.ROAD_LENGTH - 500  # 在到达路的终点之前结束仿真
+SIM_END_DISTANCE = car_env.ROAD_LENGTH - 200  # 在到达路的终点之前结束仿真
 UPDATA_TIME_PER_DIDA = 0.03  # 在c++版本的仿真平台的3D工程中，取的时间步长是0.03
 time_tag = 0.0
 
@@ -71,7 +71,7 @@ def plot_data(CarList_I):
 # 计算运动学参数
 def CarList_calculate(Carlist, STARTEGEY):
     for single_car in Carlist:
-        single_car.calculate(Carlist, STARTEGEY)
+        single_car.calculate(Carlist, STARTEGEY, time_tag)
 
 
 # 更新运动学信息
@@ -80,14 +80,20 @@ def CarList_update_info(Carlist, time_per_dida_I):
         single_car.update_car_info(time_per_dida_I)
 
 
-# 根据当前的车辆数更新是否加入platoon的信息
-def CarList_update_platoon_info(Carlist, des_platoon_size):
-    if len(Carlist) < des_platoon_size:
+# 根据是否加入platoon的信息
+def CarList_update_platoon_info(Carlist, des_platoon_size, build_platoon):
+    if build_platoon == False:
         for single_car in Carlist:
             single_car.ingaged_in_platoon = False
     else:
         for single_car in Carlist:
-            single_car.ingaged_in_platoon = False
+            single_car.leader = Carlist[0]
+        if len(Carlist) < des_platoon_size:
+            for single_car in Carlist:
+                single_car.ingaged_in_platoon = False
+        else:
+            for single_car in Carlist:
+                single_car.ingaged_in_platoon = True
 
 
 if __name__ == '__main__':
@@ -123,12 +129,12 @@ if __name__ == '__main__':
             Carlist.append(car1)
         if time_tag >= 2 and len(Carlist) == 1:
             Carlist.append(car2)
-        # if time_tag >= 6 and len(Carlist) == 2:
+        # if time_tag >= 4 and len(Carlist) == 2:
         #     Carlist.append(car3)
-        CarList_update_platoon_info(Carlist, 2)
+        CarList_update_platoon_info(Carlist, des_platoon_size=2, build_platoon=True)
 
         # 计算运动学信息
-        CarList_calculate(Carlist, 'CACC')
+        CarList_calculate(Carlist, STARTEGEY='CACC')
 
         # 更新运动学参数。由于c++程序的3D和CarAI的时钟不同步，需要模仿那个程序进行多轮次更新
         turns = 0
