@@ -19,50 +19,73 @@ def plot_data(CarList_I):
         max_location_length = len(single_car.locationData) if max_location_length < len(
             single_car.locationData) else max_location_length
 
-    plt.figure(0)
+    plt.figure('dynamics')
     for single_car in CarList_I:
         if max_speed_length > len(single_car.speedData):
             data = list(np.zeros(max_speed_length - len(single_car.speedData))) + single_car.speedData
         else:
             data = single_car.speedData
+        plt.subplot(211)
         plt.plot(np.arange(max_speed_length), data)
     plt.ylabel('speed')
     plt.xlabel('time_steps')
-    # plt.show()
 
-    plt.figure(1)
     for single_car in CarList_I:
         if max_acc_length > len(single_car.accData):
             data = list(np.zeros(max_acc_length - len(single_car.accData))) + single_car.accData
         else:
             data = single_car.accData
+        plt.subplot(212)
         plt.plot(np.arange(max_acc_length), data)
     plt.ylabel('acc')
     plt.xlabel('time_steps')
-    # plt.show()
 
-    # plt.figure(2)
-    # for single_car in CarList_I:
-    #     locationData_plt = np.array(single_car.locationData)
-    #     if max_location_length > len(single_car.locationData):
-    #         data = list(np.zeros(max_location_length - len(single_car.locationData))) + locationData_plt[:,
-    #                                                                               1]  # 只有numpy才支持这样切片，list不支持
-    #     else:
-    #         data = locationData_plt[:, 1]
-    #     plt.plot(np.arange(max_location_length), data)
-    # plt.ylabel('location')
-    # plt.xlabel('time_steps')
+    plt.figure('location')
+    data = []
+    index = 0
+    for single_car in CarList_I:
+        locationData_plt = np.array(single_car.locationData)
+        if max_location_length > len(single_car.locationData):
+            data.append(list(np.zeros(max_location_length - len(single_car.locationData))) + list(
+                locationData_plt[:, 1]))  # 只有numpy才支持这样切片，list不支持
+        else:
+            data.append(list(locationData_plt[:, 1]))
+        plt.plot(np.arange(max_location_length), data[index])
+        index += 1
+    plt.ylabel('location')
+    plt.xlabel('time_steps')
+
+    plt.figure('inter-space')
+    index = 0
+    for index in range(len(data) - 1):
+        plt.plot(np.arange(max_location_length), np.array(data[index]) - np.array(data[index + 1]) - car_env.CAR_LENGTH)
+    plt.ylabel('inter-space')
+    plt.xlabel('time_steps')
+
     plt.show()
 
 
+# 计算运动学参数
+def CarList_calculate(Carlist):
+    for single_car in Carlist:
+        single_car.calculate(Carlist)
+
+
+# 更新运动学信息
+def CarList_update_info(Carlist, time_per_dida_I):
+    for single_car in Carlist:
+        single_car.update_car_info(time_per_dida_I)
+
+
 if __name__ == '__main__':
+    Carlist = []  # 车辆的数组
     car1 = car_env.car(
         id=0,
         role='leader',
         ingaged_in_platoon=True,
         tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
         tar_speed=60.0 / 3.6,
-        location=[0, 20]
+        location=[0, 5]
     )
     car2 = car_env.car(
         id=1,
@@ -73,24 +96,22 @@ if __name__ == '__main__':
         location=[0, 5]
     )
 
-    Carlist = []
-    Carlist.append(car1)
-
     while True:
         time_tag += car_env.AI_DT
-        car1_now_y = car1.location[1]
-        print('time_tag:%.2f' % time_tag, ',now_car1_y:%.2f' % car1_now_y)
+        if len(Carlist) == 0:
+            Carlist.append(car1)
         if time_tag >= 5 and len(Carlist) == 1:
             Carlist.append(car2)
 
-        car1.calculate(Carlist)  # 计算决策信息
-        if len(Carlist) == 2:
-            car2.calculate(Carlist)  # 计算决策信息
+        # 计算运动学信息
+        CarList_calculate(Carlist)
 
-        car1.update_car_info(UPDATA_TIME_PER_DIDA)  # 更新运动学信息
-        if len(Carlist) == 2:
-            car2.update_car_info(UPDATA_TIME_PER_DIDA)  # 更新运动学信息
+        # 更新运动学参数
+        CarList_update_info(Carlist, UPDATA_TIME_PER_DIDA)
 
+        # 终止条件判断
+        car1_now_y = car1.location[1]
+        print('time_tag:%.2f' % time_tag, ',now_car1_y:%.2f' % car1_now_y)
         if car1_now_y >= SIM_END_DISTANCE:
             break
 
