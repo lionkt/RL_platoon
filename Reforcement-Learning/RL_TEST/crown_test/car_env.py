@@ -392,9 +392,9 @@ def get_reward(observation):
     follower_v = observation[2]
     follower_y = observation[3]
     pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
-    r1 = (pure_interDistance - DES_PLATOON_INTER_DISTANCE) / DES_PLATOON_INTER_DISTANCE  # 由距离产生
-    r2 = -(leader_v - follower_v) / leader_v  # 由速度产生
-    return r1 * 0.01 + r2 * 0.01
+    r1 = -(pure_interDistance - DES_PLATOON_INTER_DISTANCE) / DES_PLATOON_INTER_DISTANCE  # 由距离产生
+    r2 = -(leader_v - follower_v) / (leader_v + 0.1)  # 由速度产生
+    return r1 * 0.0001 + r2 * 0.1
 
 
 # 初始化状态值

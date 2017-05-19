@@ -4,13 +4,13 @@ from RL_brain_DeepQ import DeepQNetwork
 import numpy as np
 
 # SIM_END_DISTANCE = car_env.ROAD_LENGTH - 200  # 在到达路的终点之前结束仿真
-MAX_EPISODE = 30
+MAX_EPISODE = 70
 time_tag = 0.0
 total_steps = 0
 TEST_CAR = 2
 RL = DeepQNetwork(n_actions=len(car_env.ACTION_SPACE),
                   n_features=TEST_CAR * 2,
-                  learning_rate=0.01, e_greedy=0.9,
+                  learning_rate=0.1, e_greedy=0.99,
                   replace_target_iter=100, memory_size=2000,
                   e_greedy_increment=0.001, )
 
@@ -90,7 +90,7 @@ if __name__ == '__main__':
             RL.store_transition(observation, action, reward, observation_)
 
             ep_r += reward
-            if total_steps > 100:
+            if total_steps > 1000:
                 RL.learn()
 
             # 终止条件判断
