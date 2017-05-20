@@ -21,14 +21,15 @@ ROLE_SPACE = ['leader', 'follower']
 FOLLOW_STRATEGY = ['ACC', 'CACC', 'RL']
 
 # DQN强化学习相关的变量
-action_single_step = 1  # 动作空间的步长
-ACTION_SPACE = list(np.arange(MIN_ACC, MAX_ACC, action_single_step))
+# action_single_step = 1  # 动作空间的步长
+# ACTION_SPACE = list(np.arange(MIN_ACC, MAX_ACC, action_single_step))
 TIME_TAG_UP_BOUND = 60.0
 
 # DDPG强化学习相关的变量
 STATE_DIM = 4
-ACTION_DIM = 2
-ACTION_BOUND = [MIN_ACC,MAX_ACC]
+ACTION_DIM = 1
+ACTION_BOUND = [MIN_ACC, MAX_ACC]
+
 
 # define car
 class car(object):
@@ -270,9 +271,9 @@ class car(object):
         # 如果运行reinforcement-learning
         if STARTEGEY == 'RL' and self.role == 'follower':
             # 如果运行reinforcement-learning
-            assert (action != None) and (action >= 0), '在RL中输入的action为空'
-            self.acc = ACTION_SPACE[action]  # 把输入的action当作下标，从动作空间中取值
-
+            assert action, '在RL中输入的action为空'
+            self.acc = action  # 把输入的action当作下标，从动作空间中取值
+            ''
         else:
             # 非RL，或者RL下的leader
             # 启动车辆
@@ -301,6 +302,7 @@ class car(object):
                 self.acc = MIN_ACC
             if np.abs(self.acc - MIN_ACC) <= 0.0:
                 self.acc = old_acc * alpha + (1 - alpha) * self.acc  # 窗口平滑处理
+
         # 添加jerk限制函数
         beta = 0.7
         jerk_cur = (self.acc - old_acc) / AI_DT
@@ -310,6 +312,11 @@ class car(object):
                 self.acc = -MAX_jerk * AI_DT + old_acc
             else:
                 self.acc = MAX_jerk * AI_DT + old_acc
+        #speed为零时acc不可能小于零
+        if self.speed == 0:
+            if self.acc < 0:
+                self.acc = 0
+
         if self.acc < MIN_ACC:
             self.acc = MIN_ACC
         if self.acc > MAX_ACC:
@@ -432,44 +439,43 @@ def get_reward_function(observation):
     follower_y = observation[3]
     pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
     delta_v = leader_v - follower_v
-    r1 = (pure_interDistance - DES_PLATOON_INTER_DISTANCE) / DES_PLATOON_INTER_DISTANCE  # 由距离产生
-    r2 = (leader_v - follower_v) / (leader_v + 0.1)  # 由速度产生
-    return r1 * 0.005 + r2 * 0.1
+    # r1 = (pure_interDistance - DES_PLATOON_INTER_DISTANCE) / DES_PLATOON_INTER_DISTANCE  # 由距离产生
+    # r2 = -(leader_v - follower_v) / (leader_v + 0.1)  # 由速度产生
+    # return r1 * 0.01 + r2 * 0.2
 
     # r1 = (45 - abs(pure_interDistance)) / 45 - DES_PLATOON_INTER_DISTANCE  # 由距离产生
     # r2 = (leader_v - abs(pure_interDistance)) / (leader_v + 0.1)  # 由速度产生
     # return r1 * 0.005 + r2 * 0.01
 
     # 双曲线函数的组合
-    # r1 = 0.0
-    # r2 = 0.0
-    # MAX_pure_distance = 40
-    # MAX_pure_v = 5
-    # if pure_interDistance <= DES_PLATOON_INTER_DISTANCE:
-    #     r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (pure_interDistance + 0.04)
-    # elif pure_interDistance <= MAX_pure_v:
-    #     r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (
-    #         np.abs(pure_interDistance - MAX_pure_distance) + 0.04)
-    # else:
-    #     r1 = 1 / (np.abs(MAX_pure_distance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (
-    #         np.abs(MAX_pure_distance - MAX_pure_distance) + 0.04)
-    #
-    # if delta_v <= -MAX_pure_v:
-    #     r2 = 1 / (np.abs(-MAX_pure_v - 0.0) + 0.05) - 1 / (np.abs(-MAX_pure_v + MAX_pure_v) + 0.04)
-    # elif delta_v <= 0.0:
-    #     r2 = 1 / (np.abs(delta_v - 0.0) + 0.05) - 1 / (np.abs(delta_v + MAX_pure_v) + 0.04)
-    # elif delta_v <= MAX_pure_v:
-    #     r2 = 1 / (np.abs(delta_v - 0.0) + 0.05) - 1 / (np.abs(delta_v - MAX_pure_v) + 0.04)
-    # else:
-    #     r2 = 1 / (np.abs(MAX_pure_v - 0.0) + 0.05) - 1 / (np.abs(MAX_pure_v - MAX_pure_v) + 0.04)
-    # return r1 + r2
+    r1 = 0.0
+    r2 = 0.0
+    MAX_pure_distance = 30
+    MAX_pure_v = 4
+    if pure_interDistance <= DES_PLATOON_INTER_DISTANCE:
+        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (pure_interDistance + 0.04)
+    elif pure_interDistance <= MAX_pure_v:
+        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (
+            np.abs(pure_interDistance - MAX_pure_distance) + 0.04)
+    else:
+        r1 = 1 / (np.abs(MAX_pure_distance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (
+            np.abs(MAX_pure_distance - MAX_pure_distance) + 0.04)
+
+    if delta_v <= -MAX_pure_v:
+        r2 = 1 / (np.abs(-MAX_pure_v - 0.0) + 0.05) - 1 / (np.abs(-MAX_pure_v + MAX_pure_v) + 0.04)
+    elif delta_v <= 0.0:
+        r2 = 1 / (np.abs(delta_v - 0.0) + 0.05) - 1 / (np.abs(delta_v + MAX_pure_v) + 0.04)
+    elif delta_v <= MAX_pure_v:
+        r2 = 1 / (np.abs(delta_v - 0.0) + 0.05) - 1 / (np.abs(delta_v - MAX_pure_v) + 0.04)
+    else:
+        r2 = 1 / (np.abs(MAX_pure_v - 0.0) + 0.05) - 1 / (np.abs(MAX_pure_v - MAX_pure_v) + 0.04)
+    return -r1 * 5 + r2 * 65
 
     # 分段线性函数的组合
     # r1 = 0.0
     # r2 = 0.0
     # MAX_pure_distance = 40
     # MAX_pure_v = 5
-
 
 
 # 初始化状态值

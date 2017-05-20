@@ -4,13 +4,13 @@ from RL_brain_DeepQ import DeepQNetwork
 import numpy as np
 
 # SIM_END_DISTANCE = car_env.ROAD_LENGTH - 200  # 在到达路的终点之前结束仿真
-MAX_EPISODE = 70
+MAX_EPISODE = 50
 time_tag = 0.0
 total_steps = 0
 TEST_CAR = 2
 RL = DeepQNetwork(n_actions=len(car_env.ACTION_SPACE),
                   n_features=TEST_CAR * 2,
-                  learning_rate=0.1, e_greedy=0.99,
+                  learning_rate=0.3, e_greedy=0.99,
                   replace_target_iter=100, memory_size=2000,
                   e_greedy_increment=0.001, )
 
@@ -84,7 +84,9 @@ if __name__ == '__main__':
             observation_, done, info = car_env.step_next(Carlist, time_tag, action)
 
             # 计算单步奖励
-            reward = car_env.get_reward(observation_)
+            reward = car_env.get_reward_function(observation_)
+            # reward = car_env.get_reward_table(observation_)
+
 
             # 存储
             RL.store_transition(observation, action, reward, observation_)
@@ -111,5 +113,4 @@ if __name__ == '__main__':
             my_plot.plot_data(Carlist)
 
     # 绘制RL结果
-    print(total_steps)
     RL.plot_cost()
