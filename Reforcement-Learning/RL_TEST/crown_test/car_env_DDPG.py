@@ -464,7 +464,7 @@ def get_reward_function(observation):
     # 双曲线函数的组合
     r1 = 0.0
     r2 = 0.0
-    MAX_pure_distance = 10
+    MAX_pure_distance = 13
     MAX_pure_v = 3.5
     if pure_interDistance <= DES_PLATOON_INTER_DISTANCE:
         r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (pure_interDistance + 0.04)
@@ -483,7 +483,7 @@ def get_reward_function(observation):
         r2 = 1 / (np.abs(delta_v - 0.0) + 0.05) - 1 / (np.abs(delta_v - MAX_pure_v) + 0.04)
     else:
         r2 = 1 / (np.abs(MAX_pure_v - 0.0) + 0.05) - 1 / (np.abs(MAX_pure_v - MAX_pure_v) + 0.04)
-    return r1 * 0.055 + r2 * 0.045
+    return r1 * 0.11 + r2 * 0.045
 
     # 分段线性函数的组合
     # r1 = 0.0
