@@ -27,7 +27,7 @@ import plot_funcion as my_plot
 np.random.seed(1)
 tf.set_random_seed(1)
 
-MAX_EPISODES = 35
+MAX_EPISODES = 50
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
@@ -37,7 +37,7 @@ REPLACE_ITER_C = 1000
 MEMORY_CAPACITY = 10000
 BATCH_SIZE = 16
 VAR_MIN = 0.1
-LOAD = False
+LOAD = True
 n_model = 1
 
 STATE_DIM = car_env.STATE_DIM
@@ -280,7 +280,8 @@ def train():
                       result,
                       '| R: %i' % int(ep_reward),
                       '| Explore: %.2f' % var,
-                      '| info: ', info)
+                      '| info: ', info,
+                      '| pure-dis:%.2f' % s[1])
                 break
         # 画一下最后一次的图像
         if ep == MAX_EPISODES - 1:
@@ -331,6 +332,7 @@ def eval():
         if done:
             break
     my_plot.plot_data(Carlist)
+
 
 if __name__ == '__main__':
     if LOAD:

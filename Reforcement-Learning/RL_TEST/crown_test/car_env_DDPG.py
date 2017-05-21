@@ -26,7 +26,7 @@ FOLLOW_STRATEGY = ['ACC', 'CACC', 'RL']
 TIME_TAG_UP_BOUND = 60.0
 
 # DDPG强化学习相关的变量
-STATE_DIM = 4
+STATE_DIM = 2
 ACTION_DIM = 1
 ACTION_BOUND = [MIN_ACC, MAX_ACC]
 
@@ -312,7 +312,7 @@ class car(object):
                 self.acc = -MAX_jerk * AI_DT + old_acc
             else:
                 self.acc = MAX_jerk * AI_DT + old_acc
-        #speed为零时acc不可能小于零
+        # speed为零时acc不可能小于零
         if self.speed == 0:
             if self.acc < 0:
                 self.acc = 0
@@ -389,10 +389,20 @@ def step_next(Carlist, time_tag, action):
                     break
 
     # 设计状态值
+    data_list = []
     observation = []
     for single_car in Carlist:
-        observation.append(single_car.speed)
-        observation.append(single_car.location[1])
+        data_list.append(float(single_car.speed))
+        data_list.append(float(single_car.location[1]))
+    # observation = np.array(data_list)
+    leader_v = data_list[0]
+    leader_y = data_list[1]
+    follower_v = data_list[2]
+    follower_y = data_list[3]
+    pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
+    delta_v = leader_v - follower_v
+    observation.append(delta_v)
+    observation.append(pure_interDistance)
     observation = np.array(observation)
     return observation, done, info
 
@@ -401,12 +411,14 @@ def step_next(Carlist, time_tag, action):
 # 仿照Cooperative Adaptive Cruise Control: A Reinforcement Learning Approach的设置方法
 def get_reward_table(observation):
     # 暂时只考虑1个leader+1个follower
-    leader_v = observation[0]
-    leader_y = observation[1]
-    follower_v = observation[2]
-    follower_y = observation[3]
-    pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
-    delta_v = leader_v - follower_v
+    # leader_v = observation[0]
+    # leader_y = observation[1]
+    # follower_v = observation[2]
+    # follower_y = observation[3]
+    # pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
+    # delta_v = leader_v - follower_v
+    delta_v = observation[0]
+    pure_interDistance = observation[1]
     if np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) <= 0.1 * DES_PLATOON_INTER_DISTANCE:
         return 50
     elif np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) <= 0.2 * DES_PLATOON_INTER_DISTANCE:
@@ -433,12 +445,14 @@ def get_reward_table(observation):
 # reward计算方法2：计算单步的奖励
 def get_reward_function(observation):
     # 暂时只考虑1个leader+1个follower
-    leader_v = observation[0]
-    leader_y = observation[1]
-    follower_v = observation[2]
-    follower_y = observation[3]
-    pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
-    delta_v = leader_v - follower_v
+    # leader_v = observation[0]
+    # leader_y = observation[1]
+    # follower_v = observation[2]
+    # follower_y = observation[3]
+    # pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
+    # delta_v = leader_v - follower_v
+    delta_v = observation[0]
+    pure_interDistance = observation[1]
     # r1 = (pure_interDistance - DES_PLATOON_INTER_DISTANCE) / DES_PLATOON_INTER_DISTANCE  # 由距离产生
     # r2 = -(leader_v - follower_v) / (leader_v + 0.1)  # 由速度产生
     # return r1 * 0.01 + r2 * 0.2
@@ -469,7 +483,7 @@ def get_reward_function(observation):
         r2 = 1 / (np.abs(delta_v - 0.0) + 0.05) - 1 / (np.abs(delta_v - MAX_pure_v) + 0.04)
     else:
         r2 = 1 / (np.abs(MAX_pure_v - 0.0) + 0.05) - 1 / (np.abs(MAX_pure_v - MAX_pure_v) + 0.04)
-    return -r1 * 5 + r2 * 65
+    return r1 * 0.05 + r2 * 0.1
 
     # 分段线性函数的组合
     # r1 = 0.0
@@ -480,12 +494,21 @@ def get_reward_function(observation):
 
 # 初始化状态值
 def reset(CarList):
+    obs_list = []
     obs = []
     for single_car in CarList:
         if single_car.id == 0 or single_car.role == 'leader':
-            obs.append(0)
-            obs.append(50)
+            obs_list.append(0)
+            obs_list.append(50)
         else:
-            obs.append(0)
-            obs.append(25)
+            obs_list.append(0)
+            obs_list.append(25)
+    leader_v = obs_list[0]
+    leader_y = obs_list[1]
+    follower_v = obs_list[2]
+    follower_y = obs_list[3]
+    pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
+    delta_v = leader_v - follower_v
+    obs.append(delta_v)
+    obs.append(pure_interDistance)
     return np.array(obs)
