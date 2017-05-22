@@ -315,7 +315,7 @@ class car(object):
 
         # 如果采用强化学习的方法，强制对follower平滑处理一下
         if STARTEGEY == 'RL' and self.role == 'follower':
-            alpha_2 = 0.64
+            alpha_2 = 0.62
             self.acc = alpha_2 * old_acc + (1 - alpha_2) * self.acc
 
         # speed为零时acc不可能小于零
@@ -470,10 +470,10 @@ def get_reward_function(observation):
     # 双曲线函数的组合
     r1 = 0.0
     r2 = 0.0
-    MAX_pure_distance = 15
+    MAX_pure_distance = 10
     MAX_pure_v = 3.5
     if pure_interDistance <= DES_PLATOON_INTER_DISTANCE:
-        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (pure_interDistance + 0.04)
+        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.02) - 1 / (pure_interDistance + 0.02)
     elif pure_interDistance <= MAX_pure_v:
         r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (
             np.abs(pure_interDistance - MAX_pure_distance) + 0.04)
@@ -489,7 +489,7 @@ def get_reward_function(observation):
         r2 = 1 / (np.abs(delta_v - 0.0) + 0.05) - 1 / (np.abs(delta_v - MAX_pure_v) + 0.04)
     else:
         r2 = 1 / (np.abs(MAX_pure_v - 0.0) + 0.03) - 1 / (np.abs(MAX_pure_v - MAX_pure_v) + 0.04)
-    return r1 * 0.13 + r2 * 0.045
+    return r1 * 0.123 + r2 * 0.045
 
     # 分段线性函数的组合
     # r1 = 0.0

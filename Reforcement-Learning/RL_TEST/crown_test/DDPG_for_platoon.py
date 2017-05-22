@@ -27,7 +27,7 @@ import plot_funcion as my_plot
 np.random.seed(1)
 tf.set_random_seed(1)
 
-MAX_EPISODES = 210
+MAX_EPISODES = 220
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
