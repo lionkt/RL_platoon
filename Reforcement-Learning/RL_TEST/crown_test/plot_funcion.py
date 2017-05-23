@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import car_env as car_env
 import numpy as np
 
+
 # 画图函数
 def plot_data(CarList_I):
     max_speed_length = 0
@@ -22,9 +23,16 @@ def plot_data(CarList_I):
         else:
             data = single_car.speedData
         plt.subplot(211)
-        plt.plot(np.arange(max_speed_length), data)
-    plt.ylabel('speed')
-    plt.xlabel('time_steps')
+        label = 'leader' if single_car.role == 'leader' else 'car' + str(single_car.id + 1)
+        if single_car.role == 'leader':
+            plt.plot(np.arange(max_speed_length), data, color='red', label=label, linewidth=2)
+        else:
+            plt.plot(np.arange(max_speed_length), data, label=label, linewidth=1.7)
+    plt.title('speed')
+    plt.legend()
+    plt.ylabel('m/s')
+    plt.grid(True)
+    # plt.xlabel('time_steps')
 
     for single_car in CarList_I:
         if max_acc_length > len(single_car.accData):
@@ -32,9 +40,17 @@ def plot_data(CarList_I):
         else:
             data = single_car.accData
         plt.subplot(212)
-        plt.plot(np.arange(max_acc_length), data)
-    plt.ylabel('acc')
+        label = 'leader' if single_car.role == 'leader' else 'car' + str(single_car.id + 1)
+        if single_car.role == 'leader':
+            plt.plot(np.arange(max_acc_length), data, color='red', label=label, linewidth=2)
+        else:
+            plt.plot(np.arange(max_acc_length), data, label=label, linewidth=1.7)
+    plt.title('speed')
+    plt.legend()
+    plt.ylabel('m/s^2')
     plt.xlabel('time_steps')
+    plt.grid(True)
+
 
     # plot location
     plt.figure('location')
@@ -48,16 +64,29 @@ def plot_data(CarList_I):
         else:
             data.append(list(locationData_plt[:, 1]))
         plt.subplot(211)
-        plt.plot(np.arange(max_location_length), data[index])
+        label = 'leader' if single_car.role == 'leader' else 'car' + str(single_car.id + 1)
+        if single_car.role == 'leader':
+            plt.plot(np.arange(max_location_length), data[index], color='red', label=label, linewidth=2)
+        else:
+            plt.plot(np.arange(max_location_length), data[index], label=label, linewidth=1.7)
         index += 1
-    plt.ylabel('location')
-    plt.xlabel('time_steps')
+
+    plt.title('location')
+    plt.legend()
+    plt.grid(True)
+    plt.ylabel('m')
+    # plt.xlabel('time_steps')
 
     index = 0
     for index in range(len(data) - 1):
         plt.subplot(212)
-        plt.plot(np.arange(max_location_length), np.array(data[index]) - np.array(data[index + 1]) - car_env.CAR_LENGTH)
-    plt.ylabel('inter-space')
+        label = 'car' + str(index + 1) + '-car' + str(index + 2)
+        plt.plot(np.arange(max_location_length), np.array(data[index]) - np.array(data[index + 1]) - car_env.CAR_LENGTH,
+                 label=label, linewidth=1.7)
+    plt.title('inter-space')
+    plt.legend()
+    plt.grid(True)
+    plt.ylabel('m')
     plt.xlabel('time_steps')
 
     plt.show()
