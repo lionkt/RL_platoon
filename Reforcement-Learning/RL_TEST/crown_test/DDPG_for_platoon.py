@@ -38,6 +38,7 @@ MEMORY_CAPACITY = 10000
 BATCH_SIZE = 16
 VAR_MIN = 0.1
 LOAD = False
+OUTPUT_GRAPH = True
 n_model = 1
 
 STATE_DIM = car_env.STATE_DIM
@@ -210,6 +211,9 @@ if LOAD:
     saver.restore(sess, tf.train.latest_checkpoint(path))
 else:
     sess.run(tf.global_variables_initializer())
+
+if OUTPUT_GRAPH:
+    tf.summary.FileWriter('logs', graph=sess.graph)
 
 
 def train():
