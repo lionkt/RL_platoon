@@ -213,7 +213,7 @@ else:
     sess.run(tf.global_variables_initializer())
 
 if OUTPUT_GRAPH:
-    tf.summary.FileWriter('logs', graph=sess.graph)
+    tf.summary.FileWriter('DDPG_logs/', graph=sess.graph)
 
 
 def train():
