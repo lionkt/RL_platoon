@@ -3,8 +3,8 @@ import car_env as car_env
 import numpy as np
 
 
-# 画图函数
-def plot_data(CarList_I):
+# 画图函数核心函数
+def plot_data_core(CarList_I):
     max_speed_length = 0
     max_acc_length = 0
     max_location_length = 0
@@ -27,9 +27,9 @@ def plot_data(CarList_I):
         if single_car.role == 'leader':
             plt.plot(np.arange(max_speed_length), data, color='red', label=label, linewidth=2)
         else:
-            plt.plot(np.arange(max_speed_length), data, label=label, linewidth=1.7)
-    plt.title('speed')
-    plt.legend()
+            plt.plot(np.arange(max_speed_length), data, label=label, linewidth=1.4)
+    plt.title('速度')
+    plt.legend(loc=1)
     plt.ylabel('m/s')
     plt.grid(True)
     # plt.xlabel('time_steps')
@@ -44,13 +44,12 @@ def plot_data(CarList_I):
         if single_car.role == 'leader':
             plt.plot(np.arange(max_acc_length), data, color='red', label=label, linewidth=2)
         else:
-            plt.plot(np.arange(max_acc_length), data, label=label, linewidth=1.7)
-    plt.title('speed')
-    plt.legend()
+            plt.plot(np.arange(max_acc_length), data, label=label, linewidth=1.4)
+    plt.title('加速度')
+    plt.legend(loc=1)
     plt.ylabel('m/s^2')
     plt.xlabel('time_steps')
     plt.grid(True)
-
 
     # plot location
     plt.figure('location')
@@ -68,11 +67,11 @@ def plot_data(CarList_I):
         if single_car.role == 'leader':
             plt.plot(np.arange(max_location_length), data[index], color='red', label=label, linewidth=2)
         else:
-            plt.plot(np.arange(max_location_length), data[index], label=label, linewidth=1.7)
+            plt.plot(np.arange(max_location_length), data[index], label=label, linewidth=1.5)
         index += 1
 
     plt.title('location')
-    plt.legend()
+    plt.legend(loc=4)
     plt.grid(True)
     plt.ylabel('m')
     # plt.xlabel('time_steps')
@@ -82,11 +81,19 @@ def plot_data(CarList_I):
         plt.subplot(212)
         label = 'car' + str(index + 1) + '-car' + str(index + 2)
         plt.plot(np.arange(max_location_length), np.array(data[index]) - np.array(data[index + 1]) - car_env.CAR_LENGTH,
-                 label=label, linewidth=1.7)
+                 label=label, linewidth=1.5)
     plt.title('inter-space')
-    plt.legend()
+    plt.legend(loc=1)
     plt.grid(True)
     plt.ylabel('m')
     plt.xlabel('time_steps')
 
+    # plt.show()
+
+
+# 画图的函数
+def plot_data(CarList_I):
+    plot_data_core(CarList_I)
     plt.show()
+
+#存储画出的图像

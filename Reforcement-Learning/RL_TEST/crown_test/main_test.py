@@ -71,8 +71,8 @@ if __name__ == '__main__':
             Carlist.append(car1)
         if time_tag >= 2 and len(Carlist) == 1:
             Carlist.append(car2)
-        # if time_tag >= 4 and len(Carlist) == 2:
-        #     Carlist.append(car3)
+        if time_tag >= 4 and len(Carlist) == 2:
+            Carlist.append(car3)
 
         # 根据build_platoon，更新是否加入platoon
         CarList_update_platoon_info(Carlist, des_platoon_size=2, build_platoon=True)

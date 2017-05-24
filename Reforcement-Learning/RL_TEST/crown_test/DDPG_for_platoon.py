@@ -322,12 +322,15 @@ def eval():
     # 将新车加入车队
     if len(Carlist) == 0:
         Carlist.append(car1)
-        Carlist.append(car2)
-        # 设置参与车队的车辆，根据build_platoon，更新是否加入platoon的标志位
+        # Carlist.append(car2)
+
     s = car_env.reset(Carlist)
     while True:
         # 时间戳更新
         time_tag += car_env.AI_DT
+
+        if len(Carlist)==1 and time_tag >= 2:
+            Carlist.append(car2)
 
         a = actor.choose_action(s)
         s_, done, info = car_env.step_next(Carlist, time_tag, action=a)

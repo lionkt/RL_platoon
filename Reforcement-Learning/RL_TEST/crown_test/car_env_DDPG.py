@@ -403,8 +403,12 @@ def step_next(Carlist, time_tag, action):
     # observation = np.array(data_list)
     leader_v = data_list[0]
     leader_y = data_list[1]
-    follower_v = data_list[2]
-    follower_y = data_list[3]
+    if len(Carlist)==1:
+        follower_v=0.0
+        follower_y=25
+    else:
+        follower_v = data_list[2]
+        follower_y = data_list[3]
     pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
     delta_v = leader_v - follower_v
     observation.append(delta_v)
@@ -511,8 +515,12 @@ def reset(CarList):
             obs_list.append(25)
     leader_v = obs_list[0]
     leader_y = obs_list[1]
-    follower_v = obs_list[2]
-    follower_y = obs_list[3]
+    if len(CarList) == 1:
+        follower_v = 0.0
+        follower_y = 25
+    else:
+        follower_v = obs_list[2]
+        follower_y = obs_list[3]
     pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
     delta_v = leader_v - follower_v
     obs.append(delta_v)
