@@ -279,8 +279,8 @@ class car(object):
             # 启动车辆
             car.__excute_foward(self)
             # 跟驰，或者启动测试
-            # test_method = 'leader_sin_wave'
-            test_method = 'leader_stop'
+            test_method = 'leader_sin_wave'
+            # test_method = 'leader_stop'
             if self.start_test == True and self.role == 'leader':
                 car.__test_scenario(self, test_method, time_tag)
             else:
