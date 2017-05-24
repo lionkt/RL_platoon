@@ -479,7 +479,7 @@ def get_reward_function(observation):
     if pure_interDistance <= DES_PLATOON_INTER_DISTANCE:
         r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.02) - 3 / (pure_interDistance + 0.005)
     elif pure_interDistance <= MAX_pure_distance:
-        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.02) - 1 / (
+        r1 = 3 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.02) - 1 / (
             np.abs(pure_interDistance - MAX_pure_distance) + 0.03)
     else:
         r1 = 1 / (np.abs(MAX_pure_distance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (
