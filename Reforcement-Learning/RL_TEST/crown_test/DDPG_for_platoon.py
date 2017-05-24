@@ -322,19 +322,19 @@ def eval():
     # 将新车加入车队
     if len(Carlist) == 0:
         Carlist.append(car1)
-        # Carlist.append(car2)
+        Carlist.append(car2)
 
     s = car_env.reset(Carlist)
     while True:
         # 时间戳更新
         time_tag += car_env.AI_DT
 
-        if len(Carlist)==1 and time_tag >= 2:
-            Carlist.append(car2)
+        # if len(Carlist)==1 and time_tag >= 2:
+        #     Carlist.append(car2)
 
         a = actor.choose_action(s)
         s_, done, info = car_env.step_next(Carlist, time_tag, action=a)
-        r = car_env.get_reward_function(s_)
+        # r = car_env.get_reward_function(s_)
         s = s_
         if done:
             break

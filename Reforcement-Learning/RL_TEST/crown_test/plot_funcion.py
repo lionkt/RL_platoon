@@ -28,7 +28,7 @@ def plot_data_core(CarList_I):
             plt.plot(np.arange(max_speed_length), data, color='red', label=label, linewidth=2)
         else:
             plt.plot(np.arange(max_speed_length), data, label=label, linewidth=1.4)
-    plt.title('速度')
+    plt.title('speed')
     plt.legend(loc=1)
     plt.ylabel('m/s')
     plt.grid(True)
@@ -45,7 +45,7 @@ def plot_data_core(CarList_I):
             plt.plot(np.arange(max_acc_length), data, color='red', label=label, linewidth=2)
         else:
             plt.plot(np.arange(max_acc_length), data, label=label, linewidth=1.4)
-    plt.title('加速度')
+    plt.title('acceleration')
     plt.legend(loc=1)
     plt.ylabel('m/s^2')
     plt.xlabel('time_steps')
