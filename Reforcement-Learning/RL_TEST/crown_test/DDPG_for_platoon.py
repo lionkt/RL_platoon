@@ -27,7 +27,7 @@ import plot_funcion as my_plot
 np.random.seed(1)
 tf.set_random_seed(1)
 
-MAX_EPISODES = 75
+MAX_EPISODES = 210
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
@@ -37,7 +37,7 @@ REPLACE_ITER_C = 1000
 MEMORY_CAPACITY = 10000
 BATCH_SIZE = 16
 VAR_MIN = 0.1
-LOAD = True
+LOAD = False
 OUTPUT_GRAPH = True
 n_model = 1
 

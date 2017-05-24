@@ -279,8 +279,8 @@ class car(object):
             # 启动车辆
             car.__excute_foward(self)
             # 跟驰，或者启动测试
-            test_method = 'leader_sin_wave'
-            # test_method = 'leader_stop'
+            # test_method = 'leader_sin_wave'
+            test_method = 'leader_stop'
             if self.start_test == True and self.role == 'leader':
                 car.__test_scenario(self, test_method, time_tag)
             else:
@@ -474,13 +474,13 @@ def get_reward_function(observation):
     # 双曲线函数的组合
     r1 = 0.0
     r2 = 0.0
-    MAX_pure_distance = 10
+    MAX_pure_distance = 20
     MAX_pure_v = 3.5
     if pure_interDistance <= DES_PLATOON_INTER_DISTANCE:
-        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.02) - 1 / (pure_interDistance + 0.02)
-    elif pure_interDistance <= MAX_pure_v:
-        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (
-            np.abs(pure_interDistance - MAX_pure_distance) + 0.04)
+        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.02) - 3 / (pure_interDistance + 0.005)
+    elif pure_interDistance <= MAX_pure_distance:
+        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.02) - 1 / (
+            np.abs(pure_interDistance - MAX_pure_distance) + 0.03)
     else:
         r1 = 1 / (np.abs(MAX_pure_distance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (
             np.abs(MAX_pure_distance - MAX_pure_distance) + 0.04)
@@ -493,9 +493,10 @@ def get_reward_function(observation):
         r2 = 1 / (np.abs(delta_v - 0.0) + 0.05) - 1 / (np.abs(delta_v - MAX_pure_v) + 0.04)
     else:
         r2 = 1 / (np.abs(MAX_pure_v - 0.0) + 0.03) - 1 / (np.abs(MAX_pure_v - MAX_pure_v) + 0.04)
-    return r1 * 0.123 + r2 * 0.045
+    # return r1 * 0.123 + r2 * 0.045
+    return r1 * 0.053 + r2 * 0.045
 
-    # 分段线性函数的组合
+        # 分段线性函数的组合
     # r1 = 0.0
     # r2 = 0.0
     # MAX_pure_distance = 40
