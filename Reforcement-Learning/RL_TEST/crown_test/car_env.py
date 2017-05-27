@@ -13,7 +13,7 @@ LANE_WIDTH = 3.5
 AI_DT = 0.2  # 信息决策的步长
 UPDATA_TIME_PER_DIDA = 0.03  # 在c++版本的仿真平台的3D工程中，取的时间步长是0.03
 
-START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 2
+START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 2.5
 EQUAL_TO_ZERO_SPEEED = 0.2
 
 DES_PLATOON_INTER_DISTANCE = 5  # 车队的理想间距
@@ -109,7 +109,8 @@ class car(object):
         v2 = previous.speed + AI_DT * previous.acc  # 前车的速度
         lam_para = 0.1
         epsilon = v1 - v2
-        T = DES_PLATOON_INTER_DISTANCE / (1.0 * MAX_V)
+        speed_param = 0.9
+        T = DES_PLATOON_INTER_DISTANCE / (speed_param * MAX_V)
 
         # 固定车头时距的跟驰方式
         sigma = -pure_interval + T * v1
@@ -278,8 +279,8 @@ class car(object):
             # 启动车辆
             car.__excute_foward(self)
             # 跟驰，或者启动测试
-            # test_method = 'leader_sin_wave'
-            test_method = 'leader_stop'
+            test_method = 'leader_sin_wave'
+            # test_method = 'leader_stop'
             if self.start_test == True and self.role == 'leader':
                 car.__test_scenario(self, test_method, time_tag)
             else:
