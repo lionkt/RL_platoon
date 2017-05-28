@@ -319,25 +319,57 @@ def eval():
         tar_speed=60.0 / 3.6,
         location=[0, 25]
     )
+    car3 = car_env.car(
+        id=2,
+        role='follower',
+        ingaged_in_platoon=False,
+        tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+        tar_speed=60.0 / 3.6,
+        location=[0, 0]
+    )
     # 将新车加入车队
     if len(Carlist) == 0:
         Carlist.append(car1)
         Carlist.append(car2)
+        Carlist.append(car3)
 
     s = car_env.reset(Carlist)
     while True:
         # 时间戳更新
         time_tag += car_env.AI_DT
 
-        # if len(Carlist)==1 and time_tag >= 2:
+        # if len(Carlist) == 1 and time_tag >= 2:
         #     Carlist.append(car2)
 
-        a = actor.choose_action(s)
-        s_, done, info = car_env.step_next(Carlist, time_tag, action=a)
-        # r = car_env.get_reward_function(s_)
-        s = s_
+        # 原始的两车计算
+        # a = actor.choose_action(s)
+        # s_, done, info = car_env.step_next(Carlist, time_tag, action=a)
+        # s = s_
+        # if done:
+        #     break
+
+        # 多车同时加入仿真的计算
+        done = False
+        Carlist[0].calculate(Carlist[0], STARTEGEY='RL', time_tag=time_tag, action=None)  # 先算头车
+        for pre_car_index in range(len(Carlist) - 1):
+            temp_list = []  # 只存了两辆车的数组
+            temp_list.append(Carlist[pre_car_index])
+            temp_list.append(Carlist[pre_car_index + 1])
+            s, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 先读取一下当前的状态
+            a = actor.choose_action(s)  # 根据当前状态，从训练好的网络选择动作
+            temp_list[1].calculate(temp_list, STARTEGEY='RL', time_tag=time_tag, action=a)  # 将输入的动作用于运算
+            s_, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 更新一下当前的状态
+
+        # 信息更新
+        turns = 0
+        while turns <= car_env.AI_DT:
+            car_env.CarList_update_info_core(Carlist, car_env.UPDATA_TIME_PER_DIDA)
+            turns += car_env.UPDATA_TIME_PER_DIDA
+
+        # 判断仿真是否结束
         if done:
             break
+
     my_plot.plot_data(Carlist)
 
 

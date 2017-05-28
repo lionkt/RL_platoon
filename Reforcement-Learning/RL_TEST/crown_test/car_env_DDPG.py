@@ -403,9 +403,9 @@ def step_next(Carlist, time_tag, action):
     # observation = np.array(data_list)
     leader_v = data_list[0]
     leader_y = data_list[1]
-    if len(Carlist)==1:
-        follower_v=0.0
-        follower_y=25
+    if len(Carlist) == 1:
+        follower_v = 0.0
+        follower_y = 25
     else:
         follower_v = data_list[2]
         follower_y = data_list[3]
@@ -415,6 +415,51 @@ def step_next(Carlist, time_tag, action):
     observation.append(pure_interDistance)
     observation = np.array(observation)
     return observation, done, info
+
+
+# 获取observation，done和info的函数
+def get_obs_done_info(Carlist, time_tag):
+    info = ''
+    done = False
+    if time_tag >= TIME_TAG_UP_BOUND:
+        info = 'time_end'
+        done = True
+    else:
+        # 2.两个车基本上撞在一起了
+        for car_index in range(len(Carlist)):
+            if car_index==0:
+                continue
+            else:
+                if Carlist[0].location[1] - Carlist[car_index].location[1] - Carlist[
+                    0].length / 2 - Carlist[car_index].length / 2 <= 0.05:
+                    info = 'crash'
+                    done = True
+                    break
+
+    # 设计状态值
+    data_list = []
+    observation = []
+    for single_car in Carlist:
+        data_list.append(float(single_car.speed))
+        data_list.append(float(single_car.location[1]))
+    # observation = np.array(data_list)
+    leader_v = data_list[0]
+    leader_y = data_list[1]
+    if len(Carlist) == 1:
+        follower_v = 0.0
+        follower_y = 25
+    else:
+        follower_v = data_list[2]
+        follower_y = data_list[3]
+    pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
+    delta_v = leader_v - follower_v
+    observation.append(delta_v)
+    observation.append(pure_interDistance)
+    observation = np.array(observation)
+    return observation, done, info
+
+
+
 
 
 # reward计算方法1：根据和leader的距离计算奖励
@@ -496,7 +541,7 @@ def get_reward_function(observation):
     # return r1 * 0.123 + r2 * 0.045
     return r1 * 0.053 + r2 * 0.045
 
-        # 分段线性函数的组合
+    # 分段线性函数的组合
     # r1 = 0.0
     # r2 = 0.0
     # MAX_pure_distance = 40
