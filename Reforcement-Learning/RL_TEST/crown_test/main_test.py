@@ -69,12 +69,21 @@ if __name__ == '__main__':
         tar_speed=60.0 / 3.6,
         location=[0, 0]
     )
+    car5 = car_env.car(
+        id=4,
+        role='follower',
+        ingaged_in_platoon=False,
+        tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+        tar_speed=60.0 / 3.6,
+        location=[0, -25]
+    )
 
     if len(Carlist) == 0:
         Carlist.append(car1)
         Carlist.append(car2)
         Carlist.append(car3)
         Carlist.append(car4)
+        Carlist.append(car5)
 
 
     while True:
@@ -90,11 +99,11 @@ if __name__ == '__main__':
         #     Carlist.append(car3)
 
         # 根据build_platoon，更新是否加入platoon
-        CarList_update_platoon_info(Carlist, des_platoon_size=2, build_platoon=True)
+        CarList_update_platoon_info(Carlist, des_platoon_size=4, build_platoon=True)
 
         # 计算运动学信息
-        # CarList_calculate(Carlist, STARTEGEY='CACC')
-        CarList_calculate(Carlist, STARTEGEY='ACC')
+        CarList_calculate(Carlist, STARTEGEY='CACC')
+        # CarList_calculate(Carlist, STARTEGEY='ACC')
 
 
         # 更新运动学参数。由于c++程序的3D和CarAI的时钟不同步，需要模仿那个程序进行多轮次更新

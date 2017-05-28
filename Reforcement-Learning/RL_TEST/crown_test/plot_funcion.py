@@ -45,9 +45,9 @@ def plot_data_core(CarList_I):
         plt.subplot(212)
         label = 'leader' if single_car.role == 'leader' else 'car' + str(single_car.id + 1)
         if single_car.role == 'leader':
-            plt.plot(np.arange(max_acc_length), data, color=leader_color, label=label, linewidth=2)
+            plt.plot(np.arange(max_acc_length), data, color=leader_color,  linewidth=2)
         else:
-            plt.plot(np.arange(max_acc_length), data, label=label, linewidth=1.8)
+            plt.plot(np.arange(max_acc_length), data,  linewidth=1.8)
     plt.title('acceleration')
     plt.legend(loc=1)
     plt.ylabel('m/s^2')
