@@ -1,5 +1,7 @@
 
 ## /Reforcement-Learning/Python需要屏蔽的文件，主要是pycharm的工程文件
+/Machine_Learning/.idea/*
+
 /Reforcement-Learning/RL_TEST/.idea/*
 
 
