@@ -11,7 +11,7 @@ FRESH_TIME = 0.3  # 移动间隔时间
 
 
 def init_q_table(n_states, actions):
-    table = pd.DataFrame(np.zeros(n_states, len(actions)), columns=actions)
+    table = pd.DataFrame(np.zeros((n_states, len(actions))), columns=actions)
     return table
 
 
@@ -37,18 +37,44 @@ def get_reward(state, action):
         s_ = state + 1
         if state == N_STATES - 2:
             r = 1
-        elif state == N_STATES - 1:
             s_ = 'terminal'
     return s_, r
+
+
+def output_turn(episode, state, step_counter):
+    env = ['-'] * (N_STATES - 1) + ['T']
+    if state == 'terminal':
+        print('episode ', episode, ' terminate, total step=', step_counter)
+    else:
+        env[state] = 'o'
+        form = ''.join(env)  # 把字符串数组连接起来
+        print(form)
 
 
 def rl():
     q_table = init_q_table(N_STATES, ACTIONS)
     for episode_i in range(MAX_EPISODES):
         s = 0
+        step_counter = 0
         is_end = False
         while not is_end:
             a = choose_action(s, q_table)
             s_, r = get_reward(s, a)
-            Q = q_table.ix[s, a]
-            # TODO 环境的更新
+            Q_predict = q_table.ix[s, a]  # ix是pandas混合下标索引时用的
+            # 环境的更新
+            if s_ == 'terminal':
+                Q_target = r
+                is_end = True
+            else:
+                Q_target = r + GAMMA * q_table.ix[s_, :].max()
+
+            q_table.ix[s, a] += ALPHA * (Q_target - Q_predict)
+            s = s_
+            step_counter += 1
+            output_turn(episode_i, s, step_counter)  # 输出单步的结果
+    return q_table
+
+
+if __name__ == "__main__":
+    q_table = rl()
+    print(q_table)
