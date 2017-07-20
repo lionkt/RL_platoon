@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-class RL(object):
+class RL_basic(object):
     def __init__(self, actions, learning_rate, gamma, epsilon_greedy):
         self.actions = actions
         self.learning_rate = learning_rate
@@ -25,7 +25,10 @@ class RL(object):
 
     # 由于q-table需要动态的扩展，所以在exploration前检查该state是否存在. 如果不存在要添上
     def check_state_exist(self, observation):
-        ''
+        if observation not in self.q_table.index:
+            self.append = self.q_table.append(
+                pd.Series([0] * len(self.actions), index=self.q_table.columns, name=observation))
 
-    def learn(self):
-        ''
+    # 由于sarsa和q-learning不一样，所以此处不详细写
+    def learn(self, *args):
+        pass
