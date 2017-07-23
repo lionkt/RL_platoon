@@ -33,7 +33,7 @@ class SarsaLearning(RL.RL_basic):
         self.check_state_exist(s_)
         q_predict = self.q_table.ix[s, a]
         if s_ == 'terminal':
-            q_target = r
+            q_target = r  # 没有下一步了，只能单纯的返回reward了
         else:
             q_target = r + self.gamma * self.q_table.ix[s_, a_]
         self.q_table.ix[s, a] += self.learning_rate * (q_target - q_predict)
@@ -51,7 +51,7 @@ def update():
             if done:
                 break
     print('reach MAX_EPISODE')
-    env.destroy()
+    env.destroy()  # 注意有意识销毁环境，释放内存
 
 
 if __name__ == "__main__":
@@ -61,5 +61,5 @@ if __name__ == "__main__":
     eg = 0.9
     RL_function = QLearning(actions=list(range(env.n_actions)), learning_rate=lr, gamma=gamma, epsilon_greedy=eg)
 
-    env.after(100, update())
+    env.after(100, update())  # tkinter的写法
     env.mainloop()
