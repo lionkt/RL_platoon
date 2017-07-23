@@ -24,6 +24,8 @@ class RL_basic(object):
         return action_name
 
     # 由于q-table需要动态的扩展，所以在exploration前检查该state是否存在. 如果不存在要添上
+    # 注：这里之所以再append之后还要赋值，可能是因为对于Dataframe，append有不同的处理机制
+    # 而对于list和元组，正常的append就行了，不需要再额外赋值一遍
     def check_state_exist(self, observation):
         if observation not in self.q_table.index:
             self.q_table = self.q_table.append(
