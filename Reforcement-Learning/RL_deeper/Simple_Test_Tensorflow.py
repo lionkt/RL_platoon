@@ -40,6 +40,37 @@ def test_placeholder():
         print(res)
 
 
+def linear_official_test():
+    # tensorflow 官方test
+    # train data
+    x_data = np.array([1, 2, 3, 4])
+    y_data = np.array([0., -1., -2., -3.])
+    # input and output
+    x = tf.placeholder(tf.float32)
+    y = tf.placeholder(tf.float32)
+    # model parameters
+    weights = tf.Variable([.0], dtype=tf.float32)
+    bias = tf.Variable([.0], dtype=tf.float32)
+    linear_model = weights * x + bias
+    # loss function
+    loss = tf.reduce_mean(tf.square(y - linear_model))
+    # optimizer
+    optimizer = tf.train.GradientDescentOptimizer(0.3)
+    train = optimizer.minimize(loss)
+
+    # train mainloop
+    init = tf.global_variables_initializer()
+    with tf.Session() as sess:
+        sess.run(init)
+        for i in range(MAX_STEP):
+            sess.run(train, {x: x_data, y: y_data})
+
+        # evaluate
+        final_W, final_b = sess.run([weights, bias])
+        print("w:%s, b:%s" % (final_W, final_b))
+
+
 if __name__ == "__main__":
     # linear_regression()
-    test_placeholder()
+    # test_placeholder()
+    linear_official_test()
