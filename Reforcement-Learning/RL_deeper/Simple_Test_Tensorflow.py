@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-MAX_STEP = 200
+MAX_STEP = 1000
 
 
 def linear_regression():
@@ -55,7 +55,7 @@ def linear_official_test():
     # loss function
     loss = tf.reduce_mean(tf.square(y - linear_model))
     # optimizer
-    optimizer = tf.train.GradientDescentOptimizer(0.3)
+    optimizer = tf.train.GradientDescentOptimizer(0.1)
     train = optimizer.minimize(loss)
 
     # train mainloop
@@ -66,8 +66,14 @@ def linear_official_test():
             sess.run(train, {x: x_data, y: y_data})
 
         # evaluate
-        final_W, final_b = sess.run([weights, bias])
+        # final_W, final_b = sess.run([weights, bias])  # variable作为变量，存储了训练的结果。因此该语句可正常运行
+        # final_loss = sess.run(loss) # 由于涉及placeholder的语句不直接存储数据，需要指定输入的数据
+        final_W, final_b, final_loss = sess.run([weights, bias, loss], {x: x_data, y: y_data})
         print("w:%s, b:%s" % (final_W, final_b))
+
+
+
+
 
 
 if __name__ == "__main__":
