@@ -105,6 +105,7 @@ class car(object):
     # pipes跟驰方法
     def __follow_car_Pipes(self, pure_interval, previous):
         assert previous, 'Pipes跟驰前车为空'  # 如果previous为空则报警
+        # c=1 m=0 l=0 是最简单的线性跟驰模型
         c = 1
         m = 0
         l = 0
@@ -299,8 +300,8 @@ class car(object):
             # 启动车辆
             car.__excute_foward(self)
             # 跟驰，或者启动测试
-            # test_method = 'leader_sin_wave'
-            test_method = 'leader_stop'
+            test_method = 'leader_sin_wave'
+            # test_method = 'leader_stop'
             if self.start_test == True and self.role == 'leader':
                 car.__test_scenario(self, test_method, time_tag)
             else:

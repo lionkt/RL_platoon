@@ -105,8 +105,8 @@ if __name__ == '__main__':
         CarList_update_platoon_info(Carlist, des_platoon_size=3, build_platoon=True)
 
         # 计算运动学信息
-        # CarList_calculate(Carlist, STARTEGEY='CACC')
-        CarList_calculate(Carlist, STARTEGEY='ACC')
+        CarList_calculate(Carlist, STARTEGEY='CACC')
+        # CarList_calculate(Carlist, STARTEGEY='ACC')
         # CarList_calculate(Carlist, STARTEGEY='PIPES')
 
 
