@@ -78,32 +78,36 @@ if __name__ == '__main__':
         location=[0, -25]
     )
 
+    # 一次性把所有车辆加入车队
     if len(Carlist) == 0:
         Carlist.append(car1)
         Carlist.append(car2)
         Carlist.append(car3)
-        Carlist.append(car4)
-        Carlist.append(car5)
+        # Carlist.append(car4)
+        # Carlist.append(car5)
 
 
     while True:
         # 时间戳更新
         time_tag += car_env.AI_DT
 
-        # 将新车加入车队
+        # 有一定间隔的将新车加入车队
         # if len(Carlist) == 0:
         #     Carlist.append(car1)
         # if time_tag >= 2 and len(Carlist) == 1:
         #     Carlist.append(car2)
         # if time_tag >= 4 and len(Carlist) == 2:
         #     Carlist.append(car3)
+        # if time_tag >= 6 and len(Carlist) == 3:
+        #     Carlist.append(car4)
 
         # 根据build_platoon，更新是否加入platoon
-        CarList_update_platoon_info(Carlist, des_platoon_size=4, build_platoon=True)
+        CarList_update_platoon_info(Carlist, des_platoon_size=3, build_platoon=True)
 
         # 计算运动学信息
-        CarList_calculate(Carlist, STARTEGEY='CACC')
-        # CarList_calculate(Carlist, STARTEGEY='ACC')
+        # CarList_calculate(Carlist, STARTEGEY='CACC')
+        CarList_calculate(Carlist, STARTEGEY='ACC')
+        # CarList_calculate(Carlist, STARTEGEY='PIPES')
 
 
         # 更新运动学参数。由于c++程序的3D和CarAI的时钟不同步，需要模仿那个程序进行多轮次更新

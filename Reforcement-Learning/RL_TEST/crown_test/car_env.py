@@ -102,6 +102,24 @@ class car(object):
         # assert  previous.__class__
         return previous.location[1] - self.location[1] - self.length / 2 - previous.length / 2
 
+    # pipes跟驰方法
+    def __follow_car_Pipes(self, pure_interval, previous):
+        assert previous, 'Pipes跟驰前车为空'  # 如果previous为空则报警
+        c = 1
+        m = 0
+        l = 0
+        v1 = self.speed # 自己的速度
+        v2 = previous.speed  # 前车的速度
+        tem_a = c * ((v1)**m) * (v1-v2)/(-pure_interval**l)
+
+        # 限幅
+        if (tem_a > MAX_ACC):
+            self.acc = MAX_ACC
+        elif (tem_a < MIN_ACC):
+            self.acc = MIN_ACC
+        else:
+            self.acc = tem_a
+
     # ACC的跟驰方法
     def __follow_car_ACC(self, pure_interval, previous):
         assert previous, 'ACC跟驰前车为空'  # 如果previous为空则报警
@@ -173,7 +191,9 @@ class car(object):
             # 根据策略选择跟驰的方式
             assert self.ingaged_in_platoon, '在follow_car_for_platoon中，ingaged_in_platoon出现了错误'
             # 如果参加了车队
-            if STRATEGY == 'ACC':
+            if STRATEGY == 'PIPES':
+                car.__follow_car_Pipes(self, s, previous)
+            elif STRATEGY == 'ACC':
                 car.__follow_car_ACC(self, s, previous)
             elif STRATEGY == 'CACC':
                 if (not self.leader) or (self.id == self.leader.id):
@@ -279,8 +299,8 @@ class car(object):
             # 启动车辆
             car.__excute_foward(self)
             # 跟驰，或者启动测试
-            test_method = 'leader_sin_wave'
-            # test_method = 'leader_stop'
+            # test_method = 'leader_sin_wave'
+            test_method = 'leader_stop'
             if self.start_test == True and self.role == 'leader':
                 car.__test_scenario(self, test_method, time_tag)
             else:

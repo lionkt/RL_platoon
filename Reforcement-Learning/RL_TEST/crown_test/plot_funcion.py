@@ -45,9 +45,9 @@ def plot_data_core(CarList_I):
         plt.subplot(212)
         label = 'leader' if single_car.role == 'leader' else 'car' + str(single_car.id + 1)
         if single_car.role == 'leader':
-            plt.plot(np.arange(max_acc_length), data, color=leader_color,  linewidth=2)
+            plt.plot(np.arange(max_acc_length), data, color=leader_color, linewidth=2)
         else:
-            plt.plot(np.arange(max_acc_length), data,  linewidth=1.8)
+            plt.plot(np.arange(max_acc_length), data, linewidth=1.8)
     plt.title('acceleration')
     plt.legend(loc=1)
     plt.ylabel('m/s^2')
@@ -80,41 +80,44 @@ def plot_data_core(CarList_I):
     # plt.xlabel('time_steps')
 
     index = 0
+    plot_desired_value_flag = True
     inter_distance_list = []
     for index in range(len(data) - 1):
         plt.subplot(211)
         label = 'car' + str(index + 1) + '-car' + str(index + 2)
         inter_distance_list.append(np.array(data[index]) - np.array(data[index + 1]) - car_env.CAR_LENGTH)
-        plt.plot(np.arange(max_location_length), inter_distance_list[index],
-                 label=label, linewidth=1.5)
+        plt.plot(np.arange(max_location_length), inter_distance_list[index], label=label, linewidth=1.5)
+
+    if plot_desired_value_flag:
+        length_inter_space = list(np.arange(0,300,1))
+        desired_inter_space = list(car_env.DES_PLATOON_INTER_DISTANCE * np.ones(len(length_inter_space)))
+        plt.plot(length_inter_space, desired_inter_space,'--',linewidth=1.5,label='desired inter-space')
     plt.title('inter-space')
     plt.legend(loc=1)
     plt.grid(True)
     plt.ylabel('m')
-    # plt.xlabel('time_steps')
+    plt.xlabel('time_steps')
 
-    index = 0
-    for index in range(len(inter_distance_list) - 1):
-        inter_distance_1 = inter_distance_list[index]
-        inter_distance_2 = inter_distance_list[index + 1]
-        label = 'space' + str(index + 2) + '/space' + str(index + 1)
-        yf = np.abs(fft((inter_distance_2 - car_env.DES_PLATOON_INTER_DISTANCE) / (
-            inter_distance_1 - car_env.DES_PLATOON_INTER_DISTANCE)))
-
-        yf_norm = yf / len(yf)
-        yf_norm_half=yf_norm[range(int(len(yf_norm)/2))]
-        xf = np.arange(len(yf_norm))
-        xf_half=xf[range(int(len(xf)/2))]
-
-        plt.subplot(212)
-        # plt.plot(xf, yf_norm, label=label, linewidth=2)
-        plt.plot(xf_half, yf_norm_half, label=label, linewidth=2)
-
-
-    plt.title('inter-space-error')
-    plt.legend(loc=1)
-    plt.grid(True)
-    plt.ylabel('frequency-amplitude')
+    # index = 0
+    # for index in range(len(inter_distance_list) - 1):
+    #     inter_distance_1 = inter_distance_list[index]
+    #     inter_distance_2 = inter_distance_list[index + 1]
+    #     label = 'space' + str(index + 2) + '/space' + str(index + 1)
+    #     yf = np.abs(fft((inter_distance_2 - car_env.DES_PLATOON_INTER_DISTANCE) / (
+    #         inter_distance_1 - car_env.DES_PLATOON_INTER_DISTANCE)))
+    #
+    #     yf_norm = yf / len(yf)
+    #     yf_norm_half = yf_norm[range(int(len(yf_norm) / 2))]
+    #     xf = np.arange(len(yf_norm))
+    #     xf_half = xf[range(int(len(xf) / 2))]
+    #
+    #     plt.subplot(212)
+    #     plt.plot(xf_half, yf_norm_half, label=label, linewidth=2)
+    #
+    # plt.title('inter-space-error')
+    # plt.legend(loc=1)
+    # plt.grid(True)
+    # plt.ylabel('frequency-amplitude')
     # plt.xlabel('time_steps')
 
 
