@@ -27,7 +27,7 @@ import plot_funcion as my_plot
 np.random.seed(1)
 tf.set_random_seed(1)
 
-MAX_EPISODES = 250
+MAX_EPISODES = 170
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
@@ -79,18 +79,15 @@ class Actor(object):
         with tf.variable_scope(scope):
             init_w = tf.contrib.layers.xavier_initializer()
             init_b = tf.constant_initializer(0.001)
-            net = tf.layers.dense(s, 200, activation=tf.nn.relu6,
-                                  kernel_initializer=init_w, bias_initializer=init_b, name='l1',
-                                  trainable=trainable)
-            net = tf.layers.dense(net, 200, activation=tf.nn.relu6,
-                                  kernel_initializer=init_w, bias_initializer=init_b, name='l2',
-                                  trainable=trainable)
-            net = tf.layers.dense(net, 10, activation=tf.nn.relu,
-                                  kernel_initializer=init_w, bias_initializer=init_b, name='l3',
-                                  trainable=trainable)
+            net = tf.layers.dense(s, 200, activation=tf.nn.relu6, kernel_initializer=init_w, bias_initializer=init_b,
+                                  name='l1', trainable=trainable)
+            net = tf.layers.dense(net, 200, activation=tf.nn.relu6, kernel_initializer=init_w, bias_initializer=init_b,
+                                  name='l2', trainable=trainable)
+            net = tf.layers.dense(net, 10, activation=tf.nn.relu, kernel_initializer=init_w, bias_initializer=init_b,
+                                  name='l3', trainable=trainable)
             with tf.variable_scope('a'):
-                actions = tf.layers.dense(net, self.a_dim, activation=tf.nn.tanh, kernel_initializer=init_w,
-                                          name='a', trainable=trainable)
+                actions = tf.layers.dense(net, self.a_dim, activation=tf.nn.tanh, kernel_initializer=init_w, name='a',
+                                          trainable=trainable)
                 scaled_a = tf.multiply(actions, self.action_bound,
                                        name='scaled_a')  # Scale output to -action_bound to action_bound
         return scaled_a
@@ -159,12 +156,10 @@ class Critic(object):
                 w1_a = tf.get_variable('w1_a', [self.a_dim, n_l1], initializer=init_w, trainable=trainable)
                 b1 = tf.get_variable('b1', [1, n_l1], initializer=init_b, trainable=trainable)
                 net = tf.nn.relu6(tf.matmul(s, w1_s) + tf.matmul(a, w1_a) + b1)
-            net = tf.layers.dense(net, 200, activation=tf.nn.relu6,
-                                  kernel_initializer=init_w, bias_initializer=init_b, name='l2',
-                                  trainable=trainable)
-            net = tf.layers.dense(net, 10, activation=tf.nn.relu,
-                                  kernel_initializer=init_w, bias_initializer=init_b, name='l3',
-                                  trainable=trainable)
+            net = tf.layers.dense(net, 200, activation=tf.nn.relu6, kernel_initializer=init_w, bias_initializer=init_b,
+                                  name='l2', trainable=trainable)
+            net = tf.layers.dense(net, 10, activation=tf.nn.relu, kernel_initializer=init_w, bias_initializer=init_b,
+                                  name='l3', trainable=trainable)
             with tf.variable_scope('q'):
                 q = tf.layers.dense(net, 1, kernel_initializer=init_w, bias_initializer=init_b,
                                     trainable=trainable)  # Q(s,a)
@@ -224,22 +219,10 @@ def train():
         # 每个episode都要reset一下
         Carlist.clear()
         time_tag = 0.0
-        car1 = car_env.car(
-            id=0,
-            role='leader',
-            ingaged_in_platoon=False,
-            tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-            tar_speed=60.0 / 3.6,
-            location=[0, 50]
-        )
-        car2 = car_env.car(
-            id=1,
-            role='follower',
-            ingaged_in_platoon=False,
-            tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-            tar_speed=60.0 / 3.6,
-            location=[0, 25]
-        )
+        car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False,
+                           tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6, location=[0, 50])
+        car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False,
+                           tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6, location=[0, 25])
         # 将新车加入车队
         if len(Carlist) == 0:
             Carlist.append(car1)
@@ -280,11 +263,7 @@ def train():
             if done:
                 # if done:
                 result = '| done' if done else '| ----'
-                print('Ep:', ep,
-                      result,
-                      '| R: %i' % int(ep_reward),
-                      '| Explore: %.2f' % var,
-                      '| info: ', info,
+                print('Ep:', ep, result, '| R: %i' % int(ep_reward), '| Explore: %.2f' % var, '| info: ', info,
                       '| pure-dis:%.2f' % s[1])
                 break
         # 画一下最后一次的图像
@@ -303,30 +282,12 @@ def eval():
     # 每个episode都要reset一下
     Carlist.clear()
     time_tag = 0.0
-    car1 = car_env.car(
-        id=0,
-        role='leader',
-        ingaged_in_platoon=False,
-        tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-        tar_speed=60.0 / 3.6,
-        location=[0, 50]
-    )
-    car2 = car_env.car(
-        id=1,
-        role='follower',
-        ingaged_in_platoon=False,
-        tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-        tar_speed=60.0 / 3.6,
-        location=[0, 25]
-    )
-    car3 = car_env.car(
-        id=2,
-        role='follower',
-        ingaged_in_platoon=False,
-        tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-        tar_speed=60.0 / 3.6,
-        location=[0, 0]
-    )
+    car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, 50])
+    car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, 25])
+    car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, 0])
     # 将新车加入车队
     if len(Carlist) == 0:
         Carlist.append(car1)
@@ -373,8 +334,88 @@ def eval():
     my_plot.plot_data(Carlist)
 
 
+# 根据build_platoon，更新是否加入platoon的信息
+def CarList_update_platoon_info(Carlist, des_platoon_size, build_platoon):
+    if build_platoon == False:
+        for single_car in Carlist:
+            single_car.engaged_in_platoon = False
+    else:
+        for single_car in Carlist:
+            single_car.leader = Carlist[0]
+        if len(Carlist) < des_platoon_size:
+            for single_car in Carlist:
+                single_car.engaged_in_platoon = False
+        else:
+            for single_car in Carlist:
+                single_car.engaged_in_platoon = True
+
+
+# 采用两种或以上的跟驰策略进行组合
+def multi_strategy_eval():
+    Carlist = []
+    # 每个episode都要reset一下
+    Carlist.clear()
+    time_tag = 0.0
+    car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, 75])
+    car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, 50])
+    car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, 25])
+    car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, 0])
+    # 将新车加入车队
+    if len(Carlist) == 0:
+        Carlist.append(car1)
+        Carlist.append(car2)
+        Carlist.append(car3)
+        Carlist.append(car4)
+
+    s = car_env.reset(Carlist)
+    while True:
+        # 时间戳更新
+        time_tag += car_env.AI_DT
+
+        # if len(Carlist) == 1 and time_tag >= 2:
+        #     Carlist.append(car2)
+
+        # 原始的两车计算
+        # a = actor.choose_action(s)
+        # s_, done, info = car_env.step_next(Carlist, time_tag, action=a)
+        # s = s_
+        # if done:
+        #     break
+
+        # 多车同时加入仿真的计算
+        done = False
+        CarList_update_platoon_info(Carlist, des_platoon_size=4, build_platoon=True)      # 组建车队
+        Carlist[0].calculate(Carlist[0], STARTEGEY='RL', time_tag=time_tag, action=None)  # 先算头车，头车走自己的路，不受RL控制
+        for pre_car_index in range(len(Carlist) - 1):
+            temp_list = []  # 只存了两辆车的数组，专门针对RL训练出的双车跟驰模型
+            temp_list.append(Carlist[pre_car_index])
+            temp_list.append(Carlist[pre_car_index + 1])
+            s, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 先读取一下当前的状态
+            a = actor.choose_action(s)  # 根据当前状态，从训练好的网络选择动作
+
+            temp_list[1].calculate(Carlist, STARTEGEY='RL', time_tag=time_tag, action=a)  # 将输入的动作用于运算
+            s_, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 更新一下当前的状态
+
+        # 信息更新
+        turns = 0
+        while turns <= car_env.AI_DT:
+            car_env.CarList_update_info_core(Carlist, car_env.UPDATA_TIME_PER_DIDA)
+            turns += car_env.UPDATA_TIME_PER_DIDA
+
+        # 判断仿真是否结束
+        if done:
+            break
+
+    my_plot.plot_data(Carlist)
+
+
 if __name__ == '__main__':
     if LOAD:
-        eval()
+        # eval()
+        multi_strategy_eval()
     else:
         train()

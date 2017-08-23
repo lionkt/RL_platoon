@@ -55,7 +55,7 @@ class car(object):
 
         self.target_interDis = tar_interDis
         self.target_speed = tar_speed
-        self.ingaged_in_platoon = ingaged_in_platoon if ingaged_in_platoon else False  # 默认不参加
+        self.engaged_in_platoon = ingaged_in_platoon if ingaged_in_platoon else False  # 默认不参加
         self.leader = leader
         self.previousCar = previousCar
         self.length = CAR_LENGTH if not car_length else car_length
@@ -190,7 +190,7 @@ class car(object):
             s = car.__calc_pure_interDistance(self, previous)
 
             # 根据策略选择跟驰的方式
-            assert self.ingaged_in_platoon, '在follow_car_for_platoon中，ingaged_in_platoon出现了错误'
+            assert self.engaged_in_platoon, '在follow_car_for_platoon中，ingaged_in_platoon出现了错误'
             # 如果参加了车队
             if STRATEGY == 'PIPES':
                 car.__follow_car_Pipes(self, s, previous)
@@ -307,7 +307,7 @@ class car(object):
             else:
                 # 车辆跟驰
                 precar = car.__get_previous_car(self, CarList)
-                if self.ingaged_in_platoon:
+                if self.engaged_in_platoon:
                     car.__follow_car_for_platoon(self, STARTEGEY, precar)  # 先默认车队的跟驰成员采用ACC方法
                 else:
                     car.__follow_car(self, precar)

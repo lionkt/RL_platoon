@@ -23,16 +23,16 @@ def CarList_update_info(Carlist, time_per_dida_I):
 def CarList_update_platoon_info(Carlist, des_platoon_size, build_platoon):
     if build_platoon == False:
         for single_car in Carlist:
-            single_car.ingaged_in_platoon = False
+            single_car.engaged_in_platoon = False
     else:
         for single_car in Carlist:
             single_car.leader = Carlist[0]
         if len(Carlist) < des_platoon_size:
             for single_car in Carlist:
-                single_car.ingaged_in_platoon = False
+                single_car.engaged_in_platoon = False
         else:
             for single_car in Carlist:
-                single_car.ingaged_in_platoon = True
+                single_car.engaged_in_platoon = True
 
 
 if __name__ == '__main__':

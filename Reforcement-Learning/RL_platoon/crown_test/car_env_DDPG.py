@@ -33,18 +33,8 @@ ACTION_BOUND = [MIN_ACC, MAX_ACC]
 
 # define car
 class car(object):
-    def __init__(
-            self,
-            id,
-            role,
-            tar_interDis,
-            tar_speed,
-            location=None,
-            ingaged_in_platoon=None,
-            leader=None,
-            previousCar=None,
-            car_length=None
-    ):
+    def __init__(self, id, role, tar_interDis, tar_speed, location=None, ingaged_in_platoon=None, leader=None,
+                 previousCar=None, car_length=None):
         self.id = id
         self.role = role
         self.speed = 0.0
@@ -56,7 +46,7 @@ class car(object):
 
         self.target_interDis = tar_interDis
         self.target_speed = tar_speed
-        self.ingaged_in_platoon = ingaged_in_platoon if ingaged_in_platoon else False  # 默认不参加
+        self.engaged_in_platoon = ingaged_in_platoon if ingaged_in_platoon else False  # 默认不参加
         self.leader = leader
         self.previousCar = previousCar
         self.length = CAR_LENGTH if not car_length else car_length
@@ -171,7 +161,7 @@ class car(object):
             s = car.__calc_pure_interDistance(self, previous)
 
             # 根据策略选择跟驰的方式
-            assert self.ingaged_in_platoon, '在follow_car_for_platoon中，ingaged_in_platoon出现了错误'
+            assert self.engaged_in_platoon, '在follow_car_for_platoon中，ingaged_in_platoon出现了错误'
             # 如果参加了车队
             if STRATEGY == 'ACC':
                 car.__follow_car_ACC(self, s, previous)
@@ -257,6 +247,32 @@ class car(object):
                     else:
                         self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.9)
 
+    # 构建多种跟驰算法组合的策略
+    def __strategy_selection(self, STRATEGY, previous):
+        if STRATEGY == 'MULTI-STRATEGY':
+            # 0-ACC, 1-Reinforcement learning
+            changing_flag = 0
+            speed_ok_flag = False
+            distance_ok_flag = False
+            v1 = self.speed  # 自己的速度
+            v2 = previous.speed  # 前车的速度
+            if (previous.acc < 0.0):
+                v2 += AI_DT * previous.acc
+            v1 = v1 if v1 > 0 else 0.0
+            v2 = v2 if v2 > 0 else 0.0
+            s = car.__calc_pure_interDistance(self, previous)  # 和前车的距离
+            changing_threshold_distance = 1.0  # 切换策略的距离阈值
+            changing_threshold_speed = 2.0  # 切换策略的速度阈值
+            if s <= DES_PLATOON_INTER_DISTANCE + changing_threshold_distance:
+                distance_ok_flag = True
+            if abs(v1 - v2) <= changing_threshold_speed:
+                speed_ok_flag = True
+            if distance_ok_flag:
+                changing_flag = 1
+            if changing_flag == 0:
+                return car.__follow_car_for_platoon(self, 'ACC', previous)
+
+
     # 车辆运动学的主函数
     def calculate(self, CarList, STARTEGEY, time_tag, action=None):
         # 存储上次的数据
@@ -286,12 +302,13 @@ class car(object):
             else:
                 # 车辆跟驰
                 precar = car.__get_previous_car(self, CarList)
-                if self.ingaged_in_platoon:
+                if self.engaged_in_platoon:
                     car.__follow_car_for_platoon(self, STARTEGEY, precar)  # 先默认车队的跟驰成员采用ACC方法
                 else:
                     car.__follow_car(self, precar)
-                # 还是要执行一次测试，然后才能跳过follow
-                car.__test_scenario(self, test_method, time_tag)
+                # 因为__test_scenario包含了对是否到达测试地点的判断，所以需要在正常行驶的时候就检查一下
+                if self.role == 'leader':
+                    car.__test_scenario(self, test_method, time_tag)
 
         # 减速限制函数，控制在包络线的范围内
         if self.acc < 0.0:
@@ -427,11 +444,11 @@ def get_obs_done_info(Carlist, time_tag):
     else:
         # 2.两个车基本上撞在一起了
         for car_index in range(len(Carlist)):
-            if car_index==0:
+            if car_index == 0:
                 continue
             else:
-                if Carlist[0].location[1] - Carlist[car_index].location[1] - Carlist[
-                    0].length / 2 - Carlist[car_index].length / 2 <= 0.05:
+                if Carlist[0].location[1] - Carlist[car_index].location[1] - Carlist[0].length / 2 - Carlist[
+                    car_index].length / 2 <= 0.05:
                     info = 'crash'
                     done = True
                     break
@@ -457,9 +474,6 @@ def get_obs_done_info(Carlist, time_tag):
     observation.append(pure_interDistance)
     observation = np.array(observation)
     return observation, done, info
-
-
-
 
 
 # reward计算方法1：根据和leader的距离计算奖励
