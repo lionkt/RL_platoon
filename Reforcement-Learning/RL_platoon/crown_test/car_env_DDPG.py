@@ -259,8 +259,8 @@ class car(object):
         v1 = v1 if v1 > 0 else 0.0
         v2 = v2 if v2 > 0 else 0.0
         s = car.__calc_pure_interDistance(self, previous)  # 和前车的距离
-        changing_threshold_distance = 0.5  # 切换策略的距离阈值
-        changing_threshold_speed = 0.5  # 切换策略的速度阈值
+        changing_threshold_distance = 2  # 切换策略的距离阈值
+        changing_threshold_speed = 2  # 切换策略的速度阈值
         # 选取策略
         if s <= DES_PLATOON_INTER_DISTANCE + changing_threshold_distance:
             distance_ok_flag = True
@@ -277,6 +277,7 @@ class car(object):
         elif changing_flag == 1:
             assert action, '在RL中输入的action为空'
             self.acc = action  # 把输入的action当作下标，从动作空间中取值
+        return changing_flag
 
     # 车辆运动学的主函数
     def calculate(self, CarList, STRATEGY, time_tag, action=None):
@@ -288,6 +289,7 @@ class car(object):
 
         old_acc = self.acc
         alpha = 0.6  # 动窗口的系数
+        strategy_flag = 0  # 0-ACC, 1-Reinforcement learning。只针对follower
 
         # 车辆加速度的计算
         if self.role == 'leader':
@@ -311,7 +313,7 @@ class car(object):
                 assert action, '在RL中输入的action为空'
                 self.acc = action  # 把输入的action当作下标，从动作空间中取值
             elif STRATEGY == 'MULTI':
-                car.__multi_strategy_selection(self, previous=precar, action=action)
+                strategy_flag = car.__multi_strategy_selection(self, previous=precar, action=action)
             else:
                 if self.engaged_in_platoon:
                     car.__follow_car_for_platoon(self, STRATEGY, precar)  # 先默认车队的跟驰成员采用ACC方法
@@ -339,15 +341,19 @@ class car(object):
                 self.acc = MAX_jerk * AI_DT + old_acc
 
         # 如果采用强化学习的方法，强制对follower平滑处理一下
-        if STRATEGY == 'RL' and self.role == 'follower':
-            alpha_2 = 0.62
+        if self.role == 'follower':
+            alpha_2 = 0.0
+            if STRATEGY == 'RL':
+                alpha_2 = 0.62
+            if strategy_flag == 1:
+                alpha_2 = 0.8
             self.acc = alpha_2 * old_acc + (1 - alpha_2) * self.acc
 
         # speed为零时acc不可能小于零
         if self.speed == 0:
             if self.acc < 0:
                 self.acc = 0
-
+        # 限幅
         if self.acc < MIN_ACC:
             self.acc = MIN_ACC
         if self.acc > MAX_ACC:
