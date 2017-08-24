@@ -3,7 +3,7 @@ Environment is a Robot Arm. The arm tries to get to the blue point.
 The environment will return a geographic (distance) information for the arm to learn.
 
 The far away from blue point the less reward; touch blue r+=1; stop at blue for a while then get r=+10.
- 
+
 You can train this RL by using LOAD = False, after training, this model will be store in the a local folder.
 Using LOAD = True to reload the trained model for playing.
 
@@ -311,14 +311,14 @@ def eval():
 
         # 多车同时加入仿真的计算
         done = False
-        Carlist[0].calculate(Carlist[0], STARTEGEY='RL', time_tag=time_tag, action=None)  # 先算头车
+        Carlist[0].calculate(Carlist[0], STRATEGY='RL', time_tag=time_tag, action=None)  # 先算头车
         for pre_car_index in range(len(Carlist) - 1):
             temp_list = []  # 只存了两辆车的数组
             temp_list.append(Carlist[pre_car_index])
             temp_list.append(Carlist[pre_car_index + 1])
             s, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 先读取一下当前的状态
             a = actor.choose_action(s)  # 根据当前状态，从训练好的网络选择动作
-            temp_list[1].calculate(temp_list, STARTEGEY='RL', time_tag=time_tag, action=a)  # 将输入的动作用于运算
+            temp_list[1].calculate(temp_list, STRATEGY='RL', time_tag=time_tag, action=a)  # 将输入的动作用于运算
             s_, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 更新一下当前的状态
 
         # 信息更新
@@ -388,8 +388,8 @@ def multi_strategy_eval():
 
         # 多车同时加入仿真的计算
         done = False
-        CarList_update_platoon_info(Carlist, des_platoon_size=4, build_platoon=True)      # 组建车队
-        Carlist[0].calculate(Carlist[0], STARTEGEY='RL', time_tag=time_tag, action=None)  # 先算头车，头车走自己的路，不受RL控制
+        CarList_update_platoon_info(Carlist, des_platoon_size=4, build_platoon=True)  # 组建车队
+        Carlist[0].calculate(Carlist[0], STRATEGY='RL', time_tag=time_tag, action=None)  # 先算头车，头车走自己的路，不受RL控制
         for pre_car_index in range(len(Carlist) - 1):
             temp_list = []  # 只存了两辆车的数组，专门针对RL训练出的双车跟驰模型
             temp_list.append(Carlist[pre_car_index])
@@ -397,7 +397,7 @@ def multi_strategy_eval():
             s, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 先读取一下当前的状态
             a = actor.choose_action(s)  # 根据当前状态，从训练好的网络选择动作
 
-            temp_list[1].calculate(Carlist, STARTEGEY='RL', time_tag=time_tag, action=a)  # 将输入的动作用于运算
+            temp_list[1].calculate(Carlist, STRATEGY='MULTI', time_tag=time_tag, action=a)  # 将输入的动作用于运算
             s_, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 更新一下当前的状态
 
         # 信息更新

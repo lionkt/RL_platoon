@@ -144,7 +144,7 @@ class car(object):
 
     def __follow_car_for_platoon(self, STRATEGY, previous):
         temp_a = MAX_ACC
-        if (not previous):
+        if previous is None:
             # 如果前车为空，说明自己是leader
             if (self.speed <= TURN_MAX_V):
                 temp_a = car.__engine_speed_up_acc_curve(self, self.speed, p=0.3)
@@ -182,7 +182,7 @@ class car(object):
     # 不参与车队的跟驰
     def __follow_car(self, previous):
         temp_a = MAX_ACC
-        if not previous:
+        if previous is None:
             # 如果前车为空，说明自己是leader
             if self.speed <= TURN_MAX_V:
                 temp_a = car.__engine_speed_up_acc_curve(self, self.speed, p=0.3)
@@ -248,33 +248,38 @@ class car(object):
                         self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.9)
 
     # 构建多种跟驰算法组合的策略
-    def __strategy_selection(self, STRATEGY, previous):
-        if STRATEGY == 'MULTI-STRATEGY':
-            # 0-ACC, 1-Reinforcement learning
-            changing_flag = 0
-            speed_ok_flag = False
-            distance_ok_flag = False
-            v1 = self.speed  # 自己的速度
-            v2 = previous.speed  # 前车的速度
-            if (previous.acc < 0.0):
-                v2 += AI_DT * previous.acc
-            v1 = v1 if v1 > 0 else 0.0
-            v2 = v2 if v2 > 0 else 0.0
-            s = car.__calc_pure_interDistance(self, previous)  # 和前车的距离
-            changing_threshold_distance = 1.0  # 切换策略的距离阈值
-            changing_threshold_speed = 2.0  # 切换策略的速度阈值
-            if s <= DES_PLATOON_INTER_DISTANCE + changing_threshold_distance:
-                distance_ok_flag = True
-            if abs(v1 - v2) <= changing_threshold_speed:
-                speed_ok_flag = True
-            if distance_ok_flag:
-                changing_flag = 1
-            if changing_flag == 0:
-                return car.__follow_car_for_platoon(self, 'ACC', previous)
-
+    def __multi_strategy_selection(self, previous, action=None):
+        changing_flag = 0  # 0-ACC, 1-Reinforcement learning
+        speed_ok_flag = False
+        distance_ok_flag = False
+        v1 = self.speed  # 自己的速度
+        v2 = previous.speed  # 前车的速度
+        if (previous.acc < 0.0):
+            v2 += AI_DT * previous.acc
+        v1 = v1 if v1 > 0 else 0.0
+        v2 = v2 if v2 > 0 else 0.0
+        s = car.__calc_pure_interDistance(self, previous)  # 和前车的距离
+        changing_threshold_distance = 0.5  # 切换策略的距离阈值
+        changing_threshold_speed = 0.5  # 切换策略的速度阈值
+        # 选取策略
+        if s <= DES_PLATOON_INTER_DISTANCE + changing_threshold_distance:
+            distance_ok_flag = True
+        if abs(v1 - v2) <= changing_threshold_speed:
+            speed_ok_flag = True
+        if distance_ok_flag and speed_ok_flag:
+            changing_flag = 1
+        # 开始分情景执行策略
+        if changing_flag == 0:
+            if self.engaged_in_platoon:
+                car.__follow_car_for_platoon(self, 'ACC', previous)
+            else:
+                car.__follow_car(self, previous)
+        elif changing_flag == 1:
+            assert action, '在RL中输入的action为空'
+            self.acc = action  # 把输入的action当作下标，从动作空间中取值
 
     # 车辆运动学的主函数
-    def calculate(self, CarList, STARTEGEY, time_tag, action=None):
+    def calculate(self, CarList, STRATEGY, time_tag, action=None):
         # 存储上次的数据
         self.accData.append(self.acc)
         self.speedData.append(self.speed)
@@ -284,31 +289,34 @@ class car(object):
         old_acc = self.acc
         alpha = 0.6  # 动窗口的系数
 
-        # 如果运行reinforcement-learning
-        if STARTEGEY == 'RL' and self.role == 'follower':
-            # 如果运行reinforcement-learning
-            assert action, '在RL中输入的action为空'
-            self.acc = action  # 把输入的action当作下标，从动作空间中取值
-            ''
-        else:
-            # 非RL，或者RL下的leader
-            # 启动车辆
-            car.__excute_foward(self)
+        # 车辆加速度的计算
+        if self.role == 'leader':
+            car.__excute_foward(self)  # 启动车辆
             # 跟驰，或者启动测试
             test_method = 'leader_sin_wave'
             # test_method = 'leader_stop'
-            if self.start_test == True and self.role == 'leader':
+            if self.start_test == True:
                 car.__test_scenario(self, test_method, time_tag)
             else:
                 # 车辆跟驰
-                precar = car.__get_previous_car(self, CarList)
                 if self.engaged_in_platoon:
-                    car.__follow_car_for_platoon(self, STARTEGEY, precar)  # 先默认车队的跟驰成员采用ACC方法
+                    car.__follow_car_for_platoon(self, STRATEGY, None)  # 先默认车队的跟驰成员采用ACC方法
+                else:
+                    car.__follow_car(self, None)
+                car.__test_scenario(self, test_method, time_tag)  # 因为__test_scenario包含了对是否到达测试地点的判断，所以需要在正常行驶的时候就检查一下
+        elif self.role == 'follower':
+            precar = car.__get_previous_car(self, CarList)
+            if STRATEGY == 'RL':
+                # 如果运行reinforcement-learning
+                assert action, '在RL中输入的action为空'
+                self.acc = action  # 把输入的action当作下标，从动作空间中取值
+            elif STRATEGY == 'MULTI':
+                car.__multi_strategy_selection(self, previous=precar, action=action)
+            else:
+                if self.engaged_in_platoon:
+                    car.__follow_car_for_platoon(self, STRATEGY, precar)  # 先默认车队的跟驰成员采用ACC方法
                 else:
                     car.__follow_car(self, precar)
-                # 因为__test_scenario包含了对是否到达测试地点的判断，所以需要在正常行驶的时候就检查一下
-                if self.role == 'leader':
-                    car.__test_scenario(self, test_method, time_tag)
 
         # 减速限制函数，控制在包络线的范围内
         if self.acc < 0.0:
@@ -331,7 +339,7 @@ class car(object):
                 self.acc = MAX_jerk * AI_DT + old_acc
 
         # 如果采用强化学习的方法，强制对follower平滑处理一下
-        if STARTEGEY == 'RL' and self.role == 'follower':
+        if STRATEGY == 'RL' and self.role == 'follower':
             alpha_2 = 0.62
             self.acc = alpha_2 * old_acc + (1 - alpha_2) * self.acc
 
