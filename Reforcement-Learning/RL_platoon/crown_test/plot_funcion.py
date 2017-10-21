@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import car_env as car_env
 import numpy as np
@@ -53,6 +55,9 @@ def plot_data_core(CarList_I):
     plt.ylabel('m/s^2')
     plt.xlabel('time_steps')
     plt.grid(True)
+    out_png = './OutputImg/dynamics.png'    # save file
+    plt.savefig(out_png, dpi=300)
+
 
     # plot location
     plt.figure('location')
@@ -97,6 +102,9 @@ def plot_data_core(CarList_I):
     plt.grid(True)
     plt.ylabel('m')
     plt.xlabel('time_steps')
+
+    out_png = './OutputImg/location.png'  # save file
+    plt.savefig(out_png, dpi=300)
 
     # index = 0
     # for index in range(len(inter_distance_list) - 1):
