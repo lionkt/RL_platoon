@@ -24,6 +24,9 @@ import shutil
 import car_env_DDPG as car_env
 import plot_funcion as my_plot
 
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
 np.random.seed(1)
 tf.set_random_seed(1)
 
@@ -37,7 +40,7 @@ REPLACE_ITER_C = 1000
 MEMORY_CAPACITY = 10000
 BATCH_SIZE = 16
 VAR_MIN = 0.1
-LOAD = True
+LOAD = False
 OUTPUT_GRAPH = True
 n_model = 1
 
@@ -397,7 +400,8 @@ def multi_strategy_eval():
             s, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 先读取一下当前的状态
             a = actor.choose_action(s)  # 根据当前状态，从训练好的网络选择动作
 
-            temp_list[1].calculate(Carlist, STRATEGY='MULTI', time_tag=time_tag, action=a)  # 将输入的动作用于运算
+            # temp_list[1].calculate(Carlist, STRATEGY='MULTI', time_tag=time_tag, action=a)  # 将输入的动作用于运算
+            temp_list[1].calculate(Carlist, STRATEGY='RL', time_tag=time_tag, action=a)  # 将输入的动作用于运算
             s_, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 更新一下当前的状态
 
         # 信息更新
