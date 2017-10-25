@@ -18,25 +18,26 @@ import car_env_DDPG as car_env
 import plot_funcion as my_plot
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 np.random.seed(1)
 tf.set_random_seed(1)
 
 #####################  hyper parameters  ####################
 
-MAX_EPISODES = 150
+MAX_EPISODES = 230
 MAX_EP_STEPS = 200
 LR_A = 0.001    # learning rate for actor
 LR_C = 0.001    # learning rate for critic
 GAMMA = 0.995     # reward discount
 REPLACEMENT = [
     dict(name='soft', tau=0.01),
-    dict(name='hard', rep_iter_a=600, rep_iter_c=500)][1]            # you can try different target replacement strategies
-MEMORY_CAPACITY = 15000
-BATCH_SIZE = 40
-VAR_MIN = 0.1
+    dict(name='hard', rep_iter_a=900, rep_iter_c=750)][1]            # you can try different target replacement strategies
+MEMORY_CAPACITY = 10000
+BATCH_SIZE = 64
+VAR_MIN = 0.05
 
+# LOAD = False
 LOAD = True
 OUTPUT_GRAPH = True
 
@@ -242,41 +243,6 @@ if OUTPUT_GRAPH:
 
 
 #####################  train  ####################
-# def train_demo():
-#     var = 3  # control exploration
-#     for i in range(MAX_EPISODES):
-#         s = env.reset()
-#         ep_reward = 0
-#
-#         for j in range(MAX_EP_STEPS):
-#
-#             # Add exploration noise
-#             a = actor.choose_action(s)
-#             a = np.clip(np.random.normal(a, var), -2, 2)    # add randomness to action selection for exploration
-#             s_, r, done, info = env.step(a)
-#
-#             M.store_transition(s, a, r / 10, s_)
-#
-#             if M.pointer > MEMORY_CAPACITY:
-#                 var *= .9995    # decay the action randomness
-#                 b_M = M.sample(BATCH_SIZE)
-#                 b_s = b_M[:, :state_dim]
-#                 b_a = b_M[:, state_dim: state_dim + action_dim]
-#                 b_r = b_M[:, -state_dim - 1: -state_dim]
-#                 b_s_ = b_M[:, -state_dim:]
-#
-#                 critic.learn(b_s, b_a, b_r, b_s_)
-#                 actor.learn(b_s)
-#
-#             s = s_
-#             ep_reward += r
-#
-#             if j == MAX_EP_STEPS-1:
-#                 print('Episode:', i, ' Reward: %i' % int(ep_reward), 'Explore: %.2f' % var, )
-#                 if ep_reward > -300:
-#                     RENDER = True
-#                 break
-
 
 def train():
     var = 3  # control exploration
@@ -332,7 +298,7 @@ def train():
                 # if done:
                 result = '| done' if done else '| ----'
                 print('Ep:', ep, result, '| R: %i' % int(ep_reward), '| Explore: %.2f' % var, '| info: ', info,
-                      '| pure-dis:%.2f' % s[1])
+                      '| pure-dis:%.2f' % s[1], '| pure-speed-error:%.2f' % s[0])
                 break
         # 画一下最后一次的图像
         if ep == MAX_EPISODES - 1:

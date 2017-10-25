@@ -27,7 +27,7 @@ def plot_data_core(CarList_I):
             data = list(np.zeros(max_speed_length - len(single_car.speedData))) + single_car.speedData
         else:
             data = single_car.speedData
-        plt.subplot(211)
+        plt.subplot(311)
         label = 'leader' if single_car.role == 'leader' else 'car' + str(single_car.id + 1)
         if single_car.role == 'leader':
             plt.plot(np.arange(max_speed_length), data, color=leader_color, label=label, linewidth=2)
@@ -44,7 +44,7 @@ def plot_data_core(CarList_I):
             data = list(np.zeros(max_acc_length - len(single_car.accData))) + single_car.accData
         else:
             data = single_car.accData
-        plt.subplot(212)
+        plt.subplot(312)
         label = 'leader' if single_car.role == 'leader' else 'car' + str(single_car.id + 1)
         if single_car.role == 'leader':
             plt.plot(np.arange(max_acc_length), data, color=leader_color, linewidth=2)
@@ -53,8 +53,28 @@ def plot_data_core(CarList_I):
     plt.title('acceleration')
     plt.legend(loc=1)
     plt.ylabel('m/s^2')
+    # plt.xlabel('time_steps')
+    plt.grid(True)
+
+    for single_car in CarList_I:
+        if max_acc_length > len(single_car.accData):
+            data = list(np.zeros(max_acc_length - len(single_car.accData))) + single_car.accData
+        else:
+            data = single_car.accData
+        plt.subplot(313)
+        label = 'leader' if single_car.role == 'leader' else 'car' + str(single_car.id + 1)
+        data2 = np.array(data[1: ])
+        data = np.array(data[ :-1])
+        if single_car.role == 'leader':
+            plt.plot(np.arange(max_acc_length-1), (data2-data)/car_env.AI_DT, color=leader_color, linewidth=2)
+        else:
+            plt.plot(np.arange(max_acc_length-1),  (data2-data)/car_env.AI_DT, linewidth=1.8)
+    plt.title('jerk')
+    plt.legend(loc=1)
+    plt.ylabel('m/s^3')
     plt.xlabel('time_steps')
     plt.grid(True)
+
     out_png = './OutputImg/dynamics.png'    # save file
     plt.savefig(out_png, dpi=300)
 
