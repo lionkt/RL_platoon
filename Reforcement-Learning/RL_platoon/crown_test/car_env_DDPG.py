@@ -587,7 +587,7 @@ def get_reward_function(observation, post_jerk):
             r3 = temp_r3/2
 
     # return r1 * 0.123 + r2 * 0.045
-    return r1 * 0.053 + r2 * 0.045 + r3 * 0.015
+    return r1 * 0.053 + r2 * 0.045 + r3 * 0.017
 
     # 分段线性函数的组合
     # r1 = 0.0
