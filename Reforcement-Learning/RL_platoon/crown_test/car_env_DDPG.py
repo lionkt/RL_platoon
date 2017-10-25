@@ -371,28 +371,14 @@ class car(object):
         self.location[1] = self.location[1] + self.speed * time_per_dida_I
 
 
-## car类相关的外部函数 ##
-# 根据build_platoon，更新是否加入platoon的信息
-def CarList_update_platoon_info(Carlist, des_platoon_size, build_platoon):
-    if build_platoon == False:
-        for single_car in Carlist:
-            single_car.ingaged_in_platoon = False
-    else:
-        for single_car in Carlist:
-            single_car.leader = Carlist[0]
-        if len(Carlist) < des_platoon_size:
-            for single_car in Carlist:
-                single_car.ingaged_in_platoon = False
-        else:
-            for single_car in Carlist:
-                single_car.ingaged_in_platoon = True
-
-
+######################### car类相关的外部函数 #########################
 # 计算运动学参数
 def CarList_calculate(Carlist, STRATEGY, time_tag, action):
     if STRATEGY == 'RL':
-        for single_car in Carlist[1: ]:
-            single_car.calculate(Carlist, STRATEGY, time_tag, action)   # RL时不用算头车了
+        if len(Carlist)>= 2:
+            Carlist[1].calculate(Carlist, STRATEGY, time_tag, action)  # RL时只算第二辆车
+        else:
+            return
     else:
         for single_car in Carlist:
             single_car.calculate(Carlist, STRATEGY, time_tag, action)
@@ -406,7 +392,7 @@ def CarList_update_info_core(Carlist, time_per_dida_I):
 
 # 根据动作值步进更新，仅用于RL
 def step_next(Carlist, time_tag, action):
-    CarList_calculate(Carlist[0:2], STRATEGY='ACC', time_tag=time_tag, action=action)  # 将输入的动作用于运算，先算前两辆
+    CarList_calculate(Carlist[0:2], STRATEGY='ACC', time_tag=time_tag, action=None)  # 将输入的动作用于运算，先算前两辆
     CarList_calculate(Carlist[1: ], STRATEGY='RL', time_tag=time_tag, action=action)  # 将输入的动作用于运算，再算第三辆
     turns = 0
     done = False
@@ -422,12 +408,12 @@ def step_next(Carlist, time_tag, action):
         done = True
     else:
         # 2.两个车基本上撞在一起了
-        for single_car in Carlist:
-            if single_car.id == 0 or single_car.role == 'leader':
+        for car_index in range(len(Carlist)):
+            if car_index == 0:
                 continue
             else:
-                if Carlist[0].location[1] - single_car.location[1] - Carlist[
-                    0].length / 2 - single_car.length / 2 <= 0.05:
+                if Carlist[car_index-1].location[1] - Carlist[car_index].location[1] - Carlist[
+                            car_index-1].length / 2 - Carlist[car_index].length / 2 <= 0.05:
                     info = 'crash'
                     done = True
                     break
@@ -447,6 +433,8 @@ def step_next(Carlist, time_tag, action):
     else:
         follower1_v = data_list[2]
         follower1_y = data_list[3]
+        if len(Carlist) == 2:
+            return [-100, -100, -100], done, info
         follower2_v = data_list[4]
         follower2_y = data_list[5]
     pure_interDistance = follower1_y - follower2_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
@@ -472,8 +460,8 @@ def get_obs_done_info(Carlist, time_tag):
             if car_index == 0:
                 continue
             else:
-                if Carlist[0].location[1] - Carlist[car_index].location[1] - Carlist[0].length / 2 - Carlist[
-                    car_index].length / 2 <= 0.05:
+                if Carlist[car_index-1].location[1] - Carlist[car_index].location[1] - Carlist[
+                            car_index-1].length / 2 - Carlist[car_index].length / 2 <= 0.05:
                     info = 'crash'
                     done = True
                     break
@@ -598,7 +586,7 @@ def get_reward_function(observation, post_jerk):
         r4 = 1 / (np.abs(MAX_pure_v - 0.0) + 0.03) - 1 / (np.abs(MAX_pure_v - MAX_pure_v) + 0.04)
 
     # return r1 * 0.123 + r2 * 0.045
-    return r1 * 0.053 + r2 * 0.045 + r3 * 0.017 + r4 * 0.045 * 0.5
+    return r1 * 0.053 + r2 * 0.045 + r3 * 0.017 * 0.0 + r4 * 0.045 * 0.5
 
     # 分段线性函数的组合
     # r1 = 0.0
@@ -628,6 +616,8 @@ def reset(CarList):
     else:
         follower1_v = obs_list[2]
         follower1_y = obs_list[3]
+        if len(CarList) == 2:
+            return [-100, -100, -100]
         follower2_v = obs_list[4]
         follower2_y = obs_list[5]
 
