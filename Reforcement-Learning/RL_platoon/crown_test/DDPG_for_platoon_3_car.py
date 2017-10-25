@@ -219,7 +219,7 @@ else:
     sess.run(tf.global_variables_initializer())
 
 if OUTPUT_GRAPH:
-    tf.summary.FileWriter('DDPG_logs/', graph=sess.graph)
+    tf.summary.FileWriter('DDPG_logs/3_cars_following', graph=sess.graph)
 
 
 def train():
@@ -235,7 +235,7 @@ def train():
                            tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6, location=[0, 50])
         car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False,
                            tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6, location=[0, 25])
-        car3 = car_env.car(id=1, role='follower', ingaged_in_platoon=False,
+        car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False,
                            tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6, location=[0, 0])
         # 将新车加入车队
         if len(Carlist) == 0:
@@ -287,7 +287,7 @@ def train():
 
     if os.path.isdir(path): shutil.rmtree(path)
     os.mkdir(path)
-    ckpt_path = os.path.join('./' + 'Data', 'DDPG.ckpt')
+    ckpt_path = os.path.join('./3_cars_following' + 'Data', 'DDPG.ckpt')
     save_path = saver.save(sess, ckpt_path, write_meta_graph=True)
     print("\nSave Model %s\n" % save_path)
 
