@@ -30,7 +30,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 np.random.seed(1)
 tf.set_random_seed(1)
 
-MAX_EPISODES = 550  # 200
+MAX_EPISODES = 350  # 200
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
@@ -41,8 +41,8 @@ MEMORY_CAPACITY = 10000
 BATCH_SIZE = 64     # 32 get better output than 16
 VAR_MIN = 0.05
 
-# LOAD = False
-LOAD = True
+LOAD = False
+# LOAD = True
 OUTPUT_GRAPH = True
 n_model = 1
 
@@ -241,8 +241,9 @@ def train():
         if len(Carlist) == 0:
             Carlist.append(car1)
             Carlist.append(car2)
+            Carlist.append(car3)
         # 设置参与车队的车辆，根据build_platoon，更新是否加入platoon的标志位
-        car_env.CarList_update_platoon_info(Carlist, des_platoon_size=2, build_platoon=True)
+        car_env.CarList_update_platoon_info(Carlist, des_platoon_size=3, build_platoon=True)
         s = car_env.reset(Carlist)
         ep_reward = 0
 
@@ -255,7 +256,7 @@ def train():
             a = actor.choose_action(s)
             a = np.clip(np.random.normal(a, var), *ACTION_BOUND)  # add randomness to action selection for exploration
             s_, done, info = car_env.step_next(Carlist, time_tag, action=a)
-            r = car_env.get_reward_function(s_, (Carlist[1].acc-last_a)/car_env.AI_DT)
+            r = car_env.get_reward_function(s_, (Carlist[2].acc-last_a)/car_env.AI_DT)
             # r = car_env.get_reward_table(s_)
 
             last_a = Carlist[1].acc  # 旧加速度更新
@@ -287,7 +288,7 @@ def train():
 
     if os.path.isdir(path): shutil.rmtree(path)
     os.mkdir(path)
-    ckpt_path = os.path.join('./3_cars_following' + 'Data', 'DDPG.ckpt')
+    ckpt_path = os.path.join('./' + 'Data/3_cars_following/', 'DDPG.ckpt')
     save_path = saver.save(sess, ckpt_path, write_meta_graph=True)
     print("\nSave Model %s\n" % save_path)
 
