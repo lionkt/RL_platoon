@@ -586,7 +586,7 @@ def get_reward_function(observation, post_jerk):
         r4 = 1 / (np.abs(MAX_pure_v - 0.0) + 0.03) - 1 / (np.abs(MAX_pure_v - MAX_pure_v) + 0.04)
 
     # return r1 * 0.123 + r2 * 0.045
-    return r1 * 0.053 + r2 * 0.045 + r3 * 0.017 * 0.0 + r4 * 0.045 * 0.5
+    return r1 * 0.053 + r2 * 0.045 + r3 * 0.017 * 0.0 + r4 * 0.045 * 0.7
 
     # 分段线性函数的组合
     # r1 = 0.0
