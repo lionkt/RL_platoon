@@ -30,7 +30,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 np.random.seed(1)
 tf.set_random_seed(1)
 
-MAX_EPISODES = 330  # 200
+MAX_EPISODES = 550  # 200
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
@@ -41,8 +41,8 @@ MEMORY_CAPACITY = 10000
 BATCH_SIZE = 64     # 32 get better output than 16
 VAR_MIN = 0.05
 
-# LOAD = False
-LOAD = True
+LOAD = False
+# LOAD = True
 OUTPUT_GRAPH = True
 n_model = 1
 
@@ -112,7 +112,7 @@ class Actor(object):
             self.policy_grads = tf.gradients(ys=self.a, xs=self.e_params, grad_ys=a_grads)
 
         with tf.variable_scope('A_train'):
-            opt = tf.train.RMSPropOptimizer(
+            opt = tf.train.AdamOptimizer(
                 -self.lr / BATCH_SIZE)  # (- learning rate) for ascent policy, div to take mean
             self.train_op = opt.apply_gradients(zip(self.policy_grads, self.e_params))
 
@@ -145,7 +145,7 @@ class Critic(object):
             self.loss = tf.reduce_mean(tf.squared_difference(self.target_q, self.q))
 
         with tf.variable_scope('C_train'):
-            self.train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
+            self.train_op = tf.train.AdamOptimizer(self.lr).minimize(self.loss)
 
         with tf.variable_scope('a_grad'):
             self.a_grads = tf.gradients(self.q, A)[0]  # tensor of gradients of each sample (None, a_dim)
@@ -217,7 +217,7 @@ if OUTPUT_GRAPH:
 
 
 def train():
-    var = 2.5  # control exploration
+    var = 5  # control exploration, original 2.5
     last_a = 0  # 上一个加速度值
     Carlist = []
     for ep in range(MAX_EPISODES):
@@ -249,9 +249,10 @@ def train():
             a = actor.choose_action(s)
             a = np.clip(np.random.normal(a, var), *ACTION_BOUND)  # add randomness to action selection for exploration
             s_, done, info = car_env.step_next(Carlist, time_tag, action=a)
-            r = car_env.get_reward_function(s_)
+            r = car_env.get_reward_function(s_, (Carlist[1].acc-last_a)/car_env.AI_DT)
             # r = car_env.get_reward_table(s_)
 
+            last_a = Carlist[1].acc  # 旧加速度更新
             M.store_transition(s, a, r, s_)
 
             if M.pointer > MEMORY_CAPACITY:
@@ -291,16 +292,19 @@ def eval():
     Carlist.clear()
     time_tag = 0.0
     car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, 50])
+                       tar_speed=60.0 / 3.6, location=[0, 75])
     car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, 25])
+                       tar_speed=60.0 / 3.6, location=[0, 50])
     car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, 25])
+    car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 0])
     # 将新车加入车队
     if len(Carlist) == 0:
         Carlist.append(car1)
         Carlist.append(car2)
         Carlist.append(car3)
+        # Carlist.append(car4)
 
     s = car_env.reset(Carlist)
     while True:
@@ -351,6 +355,7 @@ def CarList_update_platoon_info(Carlist, des_platoon_size, build_platoon):
         for single_car in Carlist:
             single_car.leader = Carlist[0]
         if len(Carlist) < des_platoon_size:
+            print('期望长度大于CarList总长度')
             for single_car in Carlist:
                 single_car.engaged_in_platoon = False
         else:

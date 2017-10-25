@@ -220,11 +220,13 @@ class car(object):
     # 获取前车--为了简化起见，直接判断ID，目前假定车辆的是头车ID=0，然后后面的车依次递增
     def __get_previous_car(self, CarList):
         ''
-        if self.id == 0:
+        if self.id == CarList[0].id:
             return None
         else:
-            index = self.id - 1
-            return CarList[index]
+            for iter in range(len(CarList)):
+                if self.id == CarList[iter].id:
+                    return CarList[iter-1]
+                iter += 1
 
     # 构建测试场景
     def __test_scenario(self, TEST_SCENARIO, time_tag):
@@ -344,7 +346,7 @@ class car(object):
         if self.role == 'follower':
             alpha_2 = 0.0
             if STRATEGY == 'RL':
-                alpha_2 = 0.64
+                alpha_2 = 0.62
             if strategy_flag == 1:
                 alpha_2 = 0.8
             self.acc = alpha_2 * old_acc + (1 - alpha_2) * self.acc
@@ -526,7 +528,7 @@ def get_reward_table(observation):
 
 
 # reward计算方法2：计算单步的奖励
-def get_reward_function(observation):
+def get_reward_function(observation, post_jerk):
     # 暂时只考虑1个leader+1个follower
     # leader_v = observation[0]
     # leader_y = observation[1]
@@ -536,6 +538,7 @@ def get_reward_function(observation):
     # delta_v = leader_v - follower_v
     delta_v = observation[0]
     pure_interDistance = observation[1]
+    post_jerk = float(post_jerk)
     # r1 = (pure_interDistance - DES_PLATOON_INTER_DISTANCE) / DES_PLATOON_INTER_DISTANCE  # 由距离产生
     # r2 = -(leader_v - follower_v) / (leader_v + 0.1)  # 由速度产生
     # return r1 * 0.01 + r2 * 0.2
@@ -544,20 +547,22 @@ def get_reward_function(observation):
     # r2 = (leader_v - abs(pure_interDistance)) / (leader_v + 0.1)  # 由速度产生
     # return r1 * 0.005 + r2 * 0.01
 
-    # 双曲线函数的组合
+    # 双曲线函数的组合（r1, r2) 以及分段线性函数(r3)
     r1 = 0.0
     r2 = 0.0
+    r3 = 0.0
     MAX_pure_distance = 20
     MAX_pure_v = 3.5
+    # 关于距离的reward
     if pure_interDistance <= DES_PLATOON_INTER_DISTANCE:
-        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.02) - 3 / (pure_interDistance + 0.005)
+        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.016) - 3 / (pure_interDistance + 0.005)
     elif pure_interDistance <= MAX_pure_distance:
-        r1 = 3 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.02) - 1 / (
+        r1 = 3 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.016) - 1 / (
             np.abs(pure_interDistance - MAX_pure_distance) + 0.03)
     else:
         r1 = 1 / (np.abs(MAX_pure_distance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (
             np.abs(MAX_pure_distance - MAX_pure_distance) + 0.04)
-
+    # 关于速度的reward
     if delta_v <= -MAX_pure_v:
         r2 = 1 / (np.abs(-MAX_pure_v - 0.0) + 0.05) - 1 / (np.abs(-MAX_pure_v + MAX_pure_v) + 0.04)
     elif delta_v <= 0.0:
@@ -566,8 +571,23 @@ def get_reward_function(observation):
         r2 = 1 / (np.abs(delta_v - 0.0) + 0.05) - 1 / (np.abs(delta_v - MAX_pure_v) + 0.04)
     else:
         r2 = 1 / (np.abs(MAX_pure_v - 0.0) + 0.03) - 1 / (np.abs(MAX_pure_v - MAX_pure_v) + 0.04)
+    #关于jerk的reward
+    turn_point1 = [1.0, 0]
+    turn_point2 = [3.5, -2]
+    turn_point3 = [5, -7]
+    if abs(post_jerk) <= turn_point1[0]:
+        r3 = turn_point1[1] / turn_point1[0] * abs(post_jerk)
+    elif abs(post_jerk) <= turn_point2[0]:
+        r3 = (turn_point2[1]-turn_point1[1])/(turn_point2[0]-turn_point1[0])*(abs(post_jerk)-turn_point1[0]) + turn_point2[1]
+    else:
+        temp_r3 = (turn_point3[1]-turn_point2[1])/(turn_point3[0]-turn_point2[0])*(abs(post_jerk)-turn_point2[0]) + turn_point3[1]
+        if abs(pure_interDistance) <= 0.8 * MAX_pure_distance:
+            r3 = temp_r3
+        else:
+            r3 = temp_r3/2
+
     # return r1 * 0.123 + r2 * 0.045
-    return r1 * 0.053 + r2 * 0.045
+    return r1 * 0.053 + r2 * 0.045 + r3 * 0.015
 
     # 分段线性函数的组合
     # r1 = 0.0
