@@ -25,12 +25,12 @@ import car_env_DDPG as car_env
 import plot_funcion as my_plot
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 np.random.seed(1)
 tf.set_random_seed(1)
 
-MAX_EPISODES = 450  # 200
+MAX_EPISODES = 330  # 200
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
@@ -39,7 +39,9 @@ REPLACE_ITER_A = 1100
 REPLACE_ITER_C = 1000
 MEMORY_CAPACITY = 10000
 BATCH_SIZE = 64     # 32 get better output than 16
-VAR_MIN = 0.1
+VAR_MIN = 0.05
+
+# LOAD = False
 LOAD = True
 OUTPUT_GRAPH = True
 n_model = 1
@@ -215,7 +217,8 @@ if OUTPUT_GRAPH:
 
 
 def train():
-    var = 2.  # control exploration
+    var = 2.5  # control exploration
+    last_a = 0  # 上一个加速度值
     Carlist = []
     for ep in range(MAX_EPISODES):
 
