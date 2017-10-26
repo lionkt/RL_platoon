@@ -38,7 +38,7 @@ GAMMA = 0.999  # reward discount
 REPLACE_ITER_A = 1100
 REPLACE_ITER_C = 1000
 MEMORY_CAPACITY = 10000
-BATCH_SIZE = 64     # 32 get better output than 16
+BATCH_SIZE = 128     # 32 get better output than 16
 VAR_MIN = 0.05
 
 # LOAD = False
@@ -306,13 +306,16 @@ def eval():
                        tar_speed=60.0 / 3.6, location=[0, 25])
     car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 0])
+    car5 = car_env.car(id=4, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, -25])
     # 将新车加入车队
     if len(Carlist) == 0:
         Carlist.append(car1)
         Carlist.append(car2)
         Carlist.append(car3)
-        # Carlist.append(car4)
-    CarList_update_platoon_info(Carlist, des_platoon_size=3, build_platoon=True)  # 把车辆加入车队
+        Carlist.append(car4)
+        # Carlist.append(car5)
+    CarList_update_platoon_info(Carlist, des_platoon_size=len(Carlist), build_platoon=True)  # 把车辆加入车队
 
     s = car_env.reset(Carlist)
     done = False
@@ -321,15 +324,21 @@ def eval():
         time_tag += car_env.AI_DT
 
         # 多车同时加入仿真的计算
-        Carlist[0].calculate(Carlist[0], STRATEGY='ACC', time_tag=time_tag, action=None)  # 先算头车
-        Carlist[1].calculate(Carlist[0:2], STRATEGY='ACC', time_tag=time_tag, action=None)  # 先算第二辆
+        Carlist[0].calculate(Carlist[0], STRATEGY='CACC', time_tag=time_tag, action=None)  # 先算头车
+        Carlist[1].calculate(Carlist[0:2], STRATEGY='CACC', time_tag=time_tag, action=None)  # 先算第二辆
         for car_index in range(len(Carlist)):
             if car_index <= 1:
                 continue
-            temp_list = []  # 只存了两辆车的数组
-            temp_list.append(Carlist[car_index - 2])
-            temp_list.append(Carlist[car_index - 1])
-            temp_list.append(Carlist[car_index])
+            if car_index == 2:
+                temp_list = []  # 3辆车的数组
+                temp_list.append(Carlist[car_index - 2])
+                temp_list.append(Carlist[car_index - 1])
+                temp_list.append(Carlist[car_index])
+            elif car_index >= 3:
+                temp_list = []  # 3辆车的数组
+                temp_list.append(Carlist[0])
+                temp_list.append(Carlist[car_index - 1])
+                temp_list.append(Carlist[car_index])
             s, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 先读取一下当前的状态
             a = actor.choose_action(s)  # 根据当前状态，从训练好的网络选择动作
             temp_list[2].calculate(temp_list, STRATEGY='RL', time_tag=time_tag, action=a)  # 将输入的动作用于运算
