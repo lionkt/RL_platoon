@@ -21,7 +21,7 @@ import tensorflow as tf
 import numpy as np
 import os
 import shutil
-import car_env_DDPG as car_env
+import car_env_DDPG_3cars as car_env
 import plot_funcion as my_plot
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -30,7 +30,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 np.random.seed(1)
 tf.set_random_seed(1)
 
-MAX_EPISODES = 300  # 200
+MAX_EPISODES = 500
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
@@ -41,8 +41,8 @@ MEMORY_CAPACITY = 10000
 BATCH_SIZE = 64     # 32 get better output than 16
 VAR_MIN = 0.05
 
-LOAD = False
-# LOAD = True
+# LOAD = False
+LOAD = True
 OUTPUT_GRAPH = True
 n_model = 1
 
@@ -223,7 +223,7 @@ if OUTPUT_GRAPH:
 
 
 def train():
-    var = 5  # control exploration, original 2.5
+    var = 4.5  # control exploration, original 2.5
     last_a = 0  # 上一个加速度值
     Carlist = []
     for ep in range(MAX_EPISODES):
@@ -311,17 +311,16 @@ def eval():
         Carlist.append(car1)
         Carlist.append(car2)
         Carlist.append(car3)
-        Carlist.append(car4)
+        # Carlist.append(car4)
+    CarList_update_platoon_info(Carlist, des_platoon_size=3, build_platoon=True)  # 把车辆加入车队
 
     s = car_env.reset(Carlist)
+    done = False
     while True:
         # 时间戳更新
         time_tag += car_env.AI_DT
 
         # 多车同时加入仿真的计算
-        done = False
-        CarList_update_platoon_info(Carlist, des_platoon_size=3, build_platoon=True)    # 把车辆加入车队
-
         Carlist[0].calculate(Carlist[0], STRATEGY='ACC', time_tag=time_tag, action=None)  # 先算头车
         Carlist[1].calculate(Carlist[0:2], STRATEGY='ACC', time_tag=time_tag, action=None)  # 先算第二辆
         for car_index in range(len(Carlist)):

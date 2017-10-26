@@ -26,7 +26,7 @@ FOLLOW_STRATEGY = ['ACC', 'CACC', 'RL']
 TIME_TAG_UP_BOUND = 60.0
 
 # DDPG强化学习相关的变量
-STATE_DIM = 2
+STATE_DIM = 3
 ACTION_DIM = 1
 ACTION_BOUND = [MIN_ACC, MAX_ACC]
 
@@ -100,7 +100,7 @@ class car(object):
         v2 = previous.speed + AI_DT * previous.acc  # 前车的速度
         lam_para = 0.1
         epsilon = v1 - v2
-        T = DES_PLATOON_INTER_DISTANCE / (1.0 * MAX_V)
+        T = DES_PLATOON_INTER_DISTANCE / (0.9 * MAX_V)
 
         # 固定车头时距的跟驰方式
         sigma = -pure_interval + T * v1
@@ -371,27 +371,17 @@ class car(object):
         self.location[1] = self.location[1] + self.speed * time_per_dida_I
 
 
-## car类相关的外部函数 ##
-# 根据build_platoon，更新是否加入platoon的信息
-def CarList_update_platoon_info(Carlist, des_platoon_size, build_platoon):
-    if build_platoon == False:
-        for single_car in Carlist:
-            single_car.ingaged_in_platoon = False
+######################### car类相关的外部函数 #########################
+# 计算运动学参数
+def CarList_calculate(Carlist, STRATEGY, time_tag, action):
+    if STRATEGY == 'RL':
+        if len(Carlist)>= 2:
+            Carlist[1].calculate(Carlist, STRATEGY, time_tag, action)  # RL时只算第二辆车
+        else:
+            return
     else:
         for single_car in Carlist:
-            single_car.leader = Carlist[0]
-        if len(Carlist) < des_platoon_size:
-            for single_car in Carlist:
-                single_car.ingaged_in_platoon = False
-        else:
-            for single_car in Carlist:
-                single_car.ingaged_in_platoon = True
-
-
-# 计算运动学参数
-def CarList_calculate(Carlist, STARTEGEY, time_tag, action):
-    for single_car in Carlist:
-        single_car.calculate(Carlist, STARTEGEY, time_tag, action)
+            single_car.calculate(Carlist, STRATEGY, time_tag, action)
 
 
 # 更新运动学信息的核心函数
@@ -402,7 +392,8 @@ def CarList_update_info_core(Carlist, time_per_dida_I):
 
 # 根据动作值步进更新，仅用于RL
 def step_next(Carlist, time_tag, action):
-    CarList_calculate(Carlist, STARTEGEY='RL', time_tag=time_tag, action=action)  # 将输入的动作用于运算
+    CarList_calculate(Carlist[0:2], STRATEGY='ACC', time_tag=time_tag, action=None)  # 将输入的动作用于运算，先算前两辆
+    CarList_calculate(Carlist[1: ], STRATEGY='RL', time_tag=time_tag, action=action)  # 将输入的动作用于运算，再算第三辆
     turns = 0
     done = False
     while turns <= AI_DT:
@@ -417,12 +408,12 @@ def step_next(Carlist, time_tag, action):
         done = True
     else:
         # 2.两个车基本上撞在一起了
-        for single_car in Carlist:
-            if single_car.id == 0 or single_car.role == 'leader':
+        for car_index in range(len(Carlist)):
+            if car_index == 0:
                 continue
             else:
-                if Carlist[0].location[1] - single_car.location[1] - Carlist[
-                    0].length / 2 - single_car.length / 2 <= 0.05:
+                if Carlist[car_index-1].location[1] - Carlist[car_index].location[1] - Carlist[
+                            car_index-1].length / 2 - Carlist[car_index].length / 2 <= 0.05:
                     info = 'crash'
                     done = True
                     break
@@ -437,15 +428,21 @@ def step_next(Carlist, time_tag, action):
     leader_v = data_list[0]
     leader_y = data_list[1]
     if len(Carlist) == 1:
-        follower_v = 0.0
-        follower_y = 25
+        print('ERROR: 车队中只有一辆车')
+        return None
     else:
-        follower_v = data_list[2]
-        follower_y = data_list[3]
-    pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
-    delta_v = leader_v - follower_v
-    observation.append(delta_v)
+        follower1_v = data_list[2]
+        follower1_y = data_list[3]
+        if len(Carlist) == 2:
+            return [-100, -100, -100], done, info
+        follower2_v = data_list[4]
+        follower2_y = data_list[5]
+    pure_interDistance = follower1_y - follower2_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
+    delta_v_f2_with_f1 = follower1_v - follower2_v
+    delta_v_f2_with_l = leader_v - follower2_v
+    observation.append(delta_v_f2_with_f1)
     observation.append(pure_interDistance)
+    observation.append(delta_v_f2_with_l)
     observation = np.array(observation)
     return observation, done, info
 
@@ -463,8 +460,8 @@ def get_obs_done_info(Carlist, time_tag):
             if car_index == 0:
                 continue
             else:
-                if Carlist[0].location[1] - Carlist[car_index].location[1] - Carlist[0].length / 2 - Carlist[
-                    car_index].length / 2 <= 0.05:
+                if Carlist[car_index-1].location[1] - Carlist[car_index].location[1] - Carlist[
+                            car_index-1].length / 2 - Carlist[car_index].length / 2 <= 0.05:
                     info = 'crash'
                     done = True
                     break
@@ -479,15 +476,19 @@ def get_obs_done_info(Carlist, time_tag):
     leader_v = data_list[0]
     leader_y = data_list[1]
     if len(Carlist) == 1:
-        follower_v = 0.0
-        follower_y = 25
+        print('ERROR: 车队中只有一辆车')
+        return None
     else:
-        follower_v = data_list[2]
-        follower_y = data_list[3]
-    pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
-    delta_v = leader_v - follower_v
-    observation.append(delta_v)
+        follower1_v = data_list[2]
+        follower1_y = data_list[3]
+        follower2_v = data_list[4]
+        follower2_y = data_list[5]
+    pure_interDistance = follower1_y - follower2_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
+    delta_v_f2_with_f1 = follower1_v - follower2_v
+    delta_v_f2_with_l = leader_v - follower2_v
+    observation.append(delta_v_f2_with_f1)
     observation.append(pure_interDistance)
+    observation.append(delta_v_f2_with_l)
     observation = np.array(observation)
     return observation, done, info
 
@@ -529,28 +530,16 @@ def get_reward_table(observation):
 
 # reward计算方法2：计算单步的奖励
 def get_reward_function(observation, post_jerk):
-    # 暂时只考虑1个leader+1个follower
-    # leader_v = observation[0]
-    # leader_y = observation[1]
-    # follower_v = observation[2]
-    # follower_y = observation[3]
-    # pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
-    # delta_v = leader_v - follower_v
-    delta_v = observation[0]
+    delta_v_f2_with_f1 = observation[0]
     pure_interDistance = observation[1]
+    delta_v_f2_with_l = observation[2]
     post_jerk = float(post_jerk)
-    # r1 = (pure_interDistance - DES_PLATOON_INTER_DISTANCE) / DES_PLATOON_INTER_DISTANCE  # 由距离产生
-    # r2 = -(leader_v - follower_v) / (leader_v + 0.1)  # 由速度产生
-    # return r1 * 0.01 + r2 * 0.2
-
-    # r1 = (45 - abs(pure_interDistance)) / 45 - DES_PLATOON_INTER_DISTANCE  # 由距离产生
-    # r2 = (leader_v - abs(pure_interDistance)) / (leader_v + 0.1)  # 由速度产生
-    # return r1 * 0.005 + r2 * 0.01
 
     # 双曲线函数的组合（r1, r2) 以及分段线性函数(r3)
     r1 = 0.0
     r2 = 0.0
     r3 = 0.0
+    r4 = 0.0
     MAX_pure_distance = 20
     MAX_pure_v = 3.5
     # 关于距离的reward
@@ -562,13 +551,13 @@ def get_reward_function(observation, post_jerk):
     else:
         r1 = 1 / (np.abs(MAX_pure_distance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (
             np.abs(MAX_pure_distance - MAX_pure_distance) + 0.04)
-    # 关于速度的reward
-    if delta_v <= -MAX_pure_v:
+    # 关于第二辆车速度的reward
+    if delta_v_f2_with_f1 <= -MAX_pure_v:
         r2 = 1 / (np.abs(-MAX_pure_v - 0.0) + 0.05) - 1 / (np.abs(-MAX_pure_v + MAX_pure_v) + 0.04)
-    elif delta_v <= 0.0:
-        r2 = 1 / (np.abs(delta_v - 0.0) + 0.05) - 1 / (np.abs(delta_v + MAX_pure_v) + 0.04)
-    elif delta_v <= MAX_pure_v:
-        r2 = 1 / (np.abs(delta_v - 0.0) + 0.05) - 1 / (np.abs(delta_v - MAX_pure_v) + 0.04)
+    elif delta_v_f2_with_f1 <= 0.0:
+        r2 = 1 / (np.abs(delta_v_f2_with_f1 - 0.0) + 0.05) - 1 / (np.abs(delta_v_f2_with_f1 + MAX_pure_v) + 0.04)
+    elif delta_v_f2_with_f1 <= MAX_pure_v:
+        r2 = 1 / (np.abs(delta_v_f2_with_f1 - 0.0) + 0.05) - 1 / (np.abs(delta_v_f2_with_f1 - MAX_pure_v) + 0.04)
     else:
         r2 = 1 / (np.abs(MAX_pure_v - 0.0) + 0.03) - 1 / (np.abs(MAX_pure_v - MAX_pure_v) + 0.04)
     #关于jerk的reward
@@ -586,8 +575,18 @@ def get_reward_function(observation, post_jerk):
         else:
             r3 = temp_r3/2
 
-    # return r1 * 0.123 + r2 * 0.045
-    return r1 * 0.053 + r2 * 0.045 + r3 * 0.017
+    # 关于第3辆车和leader速度的reward
+    if delta_v_f2_with_l <= -MAX_pure_v:
+        r4 = 1 / (np.abs(-MAX_pure_v - 0.0) + 0.05) - 1 / (np.abs(-MAX_pure_v + MAX_pure_v) + 0.04)
+    elif delta_v_f2_with_l <= 0.0:
+        r4 = 1 / (np.abs(delta_v_f2_with_l - 0.0) + 0.05) - 1 / (np.abs(delta_v_f2_with_l + MAX_pure_v) + 0.04)
+    elif delta_v_f2_with_l <= MAX_pure_v:
+        r4 = 1 / (np.abs(delta_v_f2_with_l - 0.0) + 0.05) - 1 / (np.abs(delta_v_f2_with_l - MAX_pure_v) + 0.04)
+    else:
+        r4 = 1 / (np.abs(MAX_pure_v - 0.0) + 0.03) - 1 / (np.abs(MAX_pure_v - MAX_pure_v) + 0.04)
+
+    # return r1 * 0.053 + r2 * 0.045 + r3 * 0.01 + r4 * 0.045 * 0.7 # 2017/10/26-2:20较好参数
+    return r1 * 0.058 + r2 * 0.045 + r3 * 0.015 + r4 * 0.045 * 0.7
 
     # 分段线性函数的组合
     # r1 = 0.0
@@ -600,23 +599,32 @@ def get_reward_function(observation, post_jerk):
 def reset(CarList):
     obs_list = []
     obs = []
+    i = 0
     for single_car in CarList:
         if single_car.id == 0 or single_car.role == 'leader':
             obs_list.append(0)
             obs_list.append(50)
         else:
             obs_list.append(0)
-            obs_list.append(25)
+            obs_list.append(50-i*25)
+        i += 1
     leader_v = obs_list[0]
     leader_y = obs_list[1]
     if len(CarList) == 1:
-        follower_v = 0.0
-        follower_y = 25
+        print('ERROR: 车队中只有一辆车')
+        return None
     else:
-        follower_v = obs_list[2]
-        follower_y = obs_list[3]
-    pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
-    delta_v = leader_v - follower_v
-    obs.append(delta_v)
+        follower1_v = obs_list[2]
+        follower1_y = obs_list[3]
+        if len(CarList) == 2:
+            return [-100, -100, -100]
+        follower2_v = obs_list[4]
+        follower2_y = obs_list[5]
+
+    pure_interDistance = follower1_y - follower2_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
+    delta_v_f2_with_f1 = follower1_v - follower2_v
+    delta_v_f2_with_l = leader_v - follower2_v
+    obs.append(delta_v_f2_with_f1)
     obs.append(pure_interDistance)
+    obs.append(delta_v_f2_with_l)
     return np.array(obs)
