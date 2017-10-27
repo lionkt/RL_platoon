@@ -346,7 +346,7 @@ class car(object):
         if self.role == 'follower':
             alpha_2 = 0.0
             if STRATEGY == 'RL':
-                alpha_2 = 0.635
+                alpha_2 = 0.62
             if strategy_flag == 1:
                 alpha_2 = 0.8
             self.acc = alpha_2 * old_acc + (1 - alpha_2) * self.acc
@@ -544,9 +544,9 @@ def get_reward_function(observation, post_jerk):
     MAX_pure_v = 3.5
     # 关于距离的reward
     if pure_interDistance <= DES_PLATOON_INTER_DISTANCE:
-        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.012) - 3 / (pure_interDistance + 0.005)
+        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.01) - 3 / (pure_interDistance + 0.005)
     elif pure_interDistance <= MAX_pure_distance:
-        r1 = 3 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.012) - 1 / (
+        r1 = 3 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.01) - 1 / (
             np.abs(pure_interDistance - MAX_pure_distance) + 0.03)
     else:
         r1 = 1 / (np.abs(MAX_pure_distance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (
@@ -586,8 +586,8 @@ def get_reward_function(observation, post_jerk):
         r4 = 1 / (np.abs(MAX_pure_v - 0.0) + 0.03) - 1 / (np.abs(MAX_pure_v - MAX_pure_v) + 0.04)
 
     # return r1 * 0.053 + r2 * 0.045 + r3 * 0.01 + r4 * 0.045 * 0.7 # 2017/10/26-2:20较好参数
-    # return r1 * 0.058 + r2 * 0.045 + r3 * 0.014 + r4 * 0.045 * 0.75 # 2017/10/26-15:30较好参数
-    return r1 * 0.062 + r2 * 0.045 + r3 * 0.015 + r4 * 0.045 * 0.75 # 2017/10/26-15:30较好参数
+    return r1 * 0.060 + r2 * 0.045 + r3 * 0.014 + r4 * 0.045 * 0.76 # 2017/10/26-15:30较好参数
+    # return r1 * 0.062 + r2 * 0.045 + r3 * 0.015 + r4 * 0.045 * 0.75 # 2017/10/26-15:30较好参数
 
     # 分段线性函数的组合
     # r1 = 0.0
