@@ -30,7 +30,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 np.random.seed(1)
 tf.set_random_seed(1)
 
-MAX_EPISODES = 950
+MAX_EPISODES = 850
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
@@ -41,8 +41,8 @@ MEMORY_CAPACITY = 10000
 BATCH_SIZE = 128     # 32 get better output than 16
 VAR_MIN = 0.00       # 0.05
 
-LOAD = False
-# LOAD = True
+# LOAD = False
+LOAD = True
 OUTPUT_GRAPH = True
 n_model = 1
 

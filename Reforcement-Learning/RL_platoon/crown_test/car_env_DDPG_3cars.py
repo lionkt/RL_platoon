@@ -346,7 +346,7 @@ class car(object):
         if self.role == 'follower':
             alpha_2 = 0.0
             if STRATEGY == 'RL':
-                alpha_2 = 0.62
+                alpha_2 = 0.63
             if strategy_flag == 1:
                 alpha_2 = 0.8
             self.acc = alpha_2 * old_acc + (1 - alpha_2) * self.acc
