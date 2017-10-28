@@ -123,31 +123,38 @@ def plot_data_core(CarList_I):
     plt.ylabel('m')
     plt.xlabel('time_steps')
 
+
+
+    index = 0
+    # correction = car_env.DES_PLATOON_INTER_DISTANCE
+    correction = 0.0 #
+    for index in range(len(inter_distance_list) - 1):
+        inter_distance_1 = inter_distance_list[index]
+        inter_distance_2 = inter_distance_list[index + 1]
+        label = 'space' + str(index + 2) + '/space' + str(index + 1)
+        yf = np.abs(fft(inter_distance_2 - correction) / fft(inter_distance_1 - correction))
+
+        # yf_bode = 20 * np.log10(yf)
+        # yf_norm = yf_bode
+
+        yf_norm = yf
+
+        yf_norm_half = yf_norm[range(int(len(yf_norm) / 2))]
+        xf = np.arange(len(yf_norm))
+        xf_half = xf[range(int(len(xf) / 2))]
+
+        plt.subplot(212)
+        plt.plot(xf_half, yf_norm_half, label=label, linewidth=2)
+        # plt.xscale('log')       # 以对数为轴画图
+
+    plt.title('inter-space-error')
+    plt.legend(loc=1)
+    plt.grid(True)
+    plt.ylabel('frequency-amplitude')
+    plt.xlabel('time_steps')
+
     out_png = './OutputImg/location.png'  # save file
     plt.savefig(out_png, dpi=300)
-
-    # index = 0
-    # for index in range(len(inter_distance_list) - 1):
-    #     inter_distance_1 = inter_distance_list[index]
-    #     inter_distance_2 = inter_distance_list[index + 1]
-    #     label = 'space' + str(index + 2) + '/space' + str(index + 1)
-    #     yf = np.abs(fft((inter_distance_2 - car_env.DES_PLATOON_INTER_DISTANCE) / (
-    #         inter_distance_1 - car_env.DES_PLATOON_INTER_DISTANCE)))
-    #
-    #     yf_norm = yf / len(yf)
-    #     yf_norm_half = yf_norm[range(int(len(yf_norm) / 2))]
-    #     xf = np.arange(len(yf_norm))
-    #     xf_half = xf[range(int(len(xf) / 2))]
-    #
-    #     plt.subplot(212)
-    #     plt.plot(xf_half, yf_norm_half, label=label, linewidth=2)
-    #
-    # plt.title('inter-space-error')
-    # plt.legend(loc=1)
-    # plt.grid(True)
-    # plt.ylabel('frequency-amplitude')
-    # plt.xlabel('time_steps')
-
 
 # 画图的函数
 def plot_data(CarList_I):

@@ -128,7 +128,7 @@ class car(object):
         v2 = previous.speed + AI_DT * previous.acc  # 前车的速度
         lam_para = 0.1
         epsilon = v1 - v2
-        speed_param = 1 #0.9
+        speed_param = 0.85 # 1.0
         T = DES_PLATOON_INTER_DISTANCE / (speed_param * MAX_V)
 
         # 固定车头时距的跟驰方式

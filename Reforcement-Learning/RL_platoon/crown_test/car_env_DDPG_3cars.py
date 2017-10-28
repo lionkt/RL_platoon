@@ -7,7 +7,7 @@ MIN_ACC = -10.0
 MAX_ACC = 6.0
 MAX_V = 60 / 3.6
 TURN_MAX_V = 4.2
-ROAD_LENGTH = MAX_V * 60
+ROAD_LENGTH = MAX_V * 70
 CAR_LENGTH = 5
 LANE_WIDTH = 3.5
 AI_DT = 0.2  # 信息决策的步长
@@ -100,7 +100,7 @@ class car(object):
         v2 = previous.speed + AI_DT * previous.acc  # 前车的速度
         lam_para = 0.1
         epsilon = v1 - v2
-        T = DES_PLATOON_INTER_DISTANCE / (0.9 * MAX_V)
+        T = DES_PLATOON_INTER_DISTANCE / (0.85 * MAX_V)
 
         # 固定车头时距的跟驰方式
         sigma = -pure_interval + T * v1
@@ -346,7 +346,7 @@ class car(object):
         if self.role == 'follower':
             alpha_2 = 0.0
             if STRATEGY == 'RL':
-                alpha_2 = 0.63
+                alpha_2 = 0.635  # 0.55
             if strategy_flag == 1:
                 alpha_2 = 0.8
             self.acc = alpha_2 * old_acc + (1 - alpha_2) * self.acc

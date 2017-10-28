@@ -30,7 +30,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 np.random.seed(1)
 tf.set_random_seed(1)
 
-MAX_EPISODES = 850
+MAX_EPISODES = 850  # 520
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
@@ -39,7 +39,7 @@ REPLACE_ITER_A = 1100
 REPLACE_ITER_C = 1000
 MEMORY_CAPACITY = 10000
 BATCH_SIZE = 128     # 32 get better output than 16
-VAR_MIN = 0.00       # 0.05
+VAR_MIN = 0.05       # 0.05
 
 # LOAD = False
 LOAD = True
@@ -451,7 +451,7 @@ if __name__ == '__main__':
 #         Carlist.append(car1)
 #         Carlist.append(car2)
 #         Carlist.append(car3)
-#         # Carlist.append(car4)
+#         Carlist.append(car4)
 #
 #     CarList_update_platoon_info(Carlist, des_platoon_size=3, build_platoon=True)
 #
@@ -460,7 +460,7 @@ if __name__ == '__main__':
 #         time_tag += car_env.AI_DT
 #         # 多车同时加入仿真的计算
 #         done = False
-#         car_env.CarList_calculate(Carlist,'CACC',time_tag=time_tag, action=None)
+#         car_env.CarList_calculate(Carlist,'ACC',time_tag=time_tag, action=None)
 #         s_, done, info = car_env.get_obs_done_info(Carlist, time_tag)  # 更新一下当前的状态
 #
 #         # 信息更新
