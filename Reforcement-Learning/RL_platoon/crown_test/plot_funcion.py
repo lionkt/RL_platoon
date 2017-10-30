@@ -22,11 +22,7 @@ def plot_data_core(CarList_I, write_flag):
 
     # plot dynamics
     plt.figure('dynamics')
-    speed_file = None
     write_buffer = []
-    if write_flag:
-        speed_file = open('./OutputImg/speed_file.txt','w')
-
     for single_car in CarList_I:
         if max_speed_length > len(single_car.speedData):
             data = list(np.zeros(max_speed_length - len(single_car.speedData))) + single_car.speedData
@@ -41,19 +37,17 @@ def plot_data_core(CarList_I, write_flag):
         # 把数据写出去
         if write_flag:
             write_buffer.append(data)
-
     plt.title('speed')
     plt.legend(loc=4)
     plt.ylabel('m/s')
     plt.grid(True)
     if write_flag:
-        write_buffer = np.array(write_buffer)
-        for i in range(max_speed_length):
-            speed_file.write(str(write_buffer[:, i]) + "\n")
+        write_buffer = np.array(write_buffer).transpose()
+        np.savetxt('./OutputImg/speed_data.txt', write_buffer)
         print('====speed data has been written=====')
-        speed_file.close()
     # plt.xlabel('time_steps')
 
+    write_buffer = []
     for single_car in CarList_I:
         if max_acc_length > len(single_car.accData):
             data = list(np.zeros(max_acc_length - len(single_car.accData))) + single_car.accData
@@ -65,12 +59,19 @@ def plot_data_core(CarList_I, write_flag):
             plt.plot(np.arange(max_acc_length), data, color=leader_color, linewidth=2)
         else:
             plt.plot(np.arange(max_acc_length), data, linewidth=1.8)
+        if write_flag:
+            write_buffer.append(data)
     plt.title('acceleration')
     plt.legend(loc=1)
     plt.ylabel('m/s^2')
     # plt.xlabel('time_steps')
     plt.grid(True)
+    if write_flag:
+        write_buffer = np.array(write_buffer).transpose()
+        np.savetxt('./OutputImg/acc_data.txt', write_buffer)
+        print('====acc data has been written=====')
 
+    write_buffer = []
     for single_car in CarList_I:
         if max_acc_length > len(single_car.accData):
             data = list(np.zeros(max_acc_length - len(single_car.accData))) + single_car.accData
@@ -84,11 +85,17 @@ def plot_data_core(CarList_I, write_flag):
             plt.plot(np.arange(max_acc_length-1), (data2-data)/car_env.AI_DT, color=leader_color, linewidth=2)
         else:
             plt.plot(np.arange(max_acc_length-1),  (data2-data)/car_env.AI_DT, linewidth=1.8)
+        if write_flag:
+            write_buffer.append(list((data2-data)/car_env.AI_DT))
     plt.title('jerk')
     plt.legend(loc=1)
     plt.ylabel('m/s^3')
     plt.xlabel('time_steps')
     plt.grid(True)
+    if write_flag:
+        write_buffer = np.array(write_buffer).transpose()
+        np.savetxt('./OutputImg/jerk_data.txt', write_buffer)
+        print('====jerk data has been written=====')
 
     out_png = './OutputImg/dynamics.png'    # save file
     plt.savefig(out_png, dpi=300)
@@ -122,11 +129,14 @@ def plot_data_core(CarList_I, write_flag):
     index = 0
     plot_desired_value_flag = True
     inter_distance_list = []
+    write_buffer = []
     for index in range(len(data) - 1):
         plt.subplot(211)
         label = 'car' + str(index + 1) + '-car' + str(index + 2)
         inter_distance_list.append(np.array(data[index]) - np.array(data[index + 1]) - car_env.CAR_LENGTH)
         plt.plot(np.arange(max_location_length), inter_distance_list[index], label=label, linewidth=1.5)
+        if write_flag:
+            write_buffer.append(inter_distance_list[index])
 
     if plot_desired_value_flag:
         length_inter_space = list(np.arange(0,300,1))
@@ -137,7 +147,10 @@ def plot_data_core(CarList_I, write_flag):
     plt.grid(True)
     plt.ylabel('m')
     plt.xlabel('time_steps')
-
+    if write_flag:
+        write_buffer = np.array(write_buffer).transpose()
+        np.savetxt('./OutputImg/inter-distance_data.txt', write_buffer)
+        print('====inter-distance data has been written=====')
 
 
     index = 0
