@@ -30,7 +30,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 np.random.seed(1)
 tf.set_random_seed(1)
 
-MAX_EPISODES = 850  # 520
+MAX_EPISODES = 2500  # 520
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
@@ -41,10 +41,12 @@ MEMORY_CAPACITY = 10000
 BATCH_SIZE = 128     # 32 get better output than 16
 VAR_MIN = 0.05       # 0.05
 
+
 # LOAD = False
 LOAD = True
 OUTPUT_GRAPH = True
-n_model = 1
+# USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
+USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
 
 STATE_DIM = car_env.STATE_DIM
 ACTION_DIM = car_env.ACTION_DIM
@@ -425,55 +427,63 @@ def multi_strategy_eval():
     my_plot.plot_data(Carlist, write_flag=True)
 
 
+def conventional_follow(STRATRGY):
+    Carlist = []
+    # 每个episode都要reset一下
+    Carlist.clear()
+    time_tag = 0.0
+    car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, 75])
+    car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, 50])
+    car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, 25])
+    car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, 0])
+    car5 = car_env.car(id=4, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, -25])
+    # 将新车加入车队
+    if len(Carlist) == 0:
+        Carlist.append(car1)
+        Carlist.append(car2)
+        Carlist.append(car3)
+        Carlist.append(car4)
+        Carlist.append(car5)
+
+    CarList_update_platoon_info(Carlist, des_platoon_size=5, build_platoon=True)
+
+    while True:
+        # 时间戳更新
+        time_tag += car_env.AI_DT
+        # 多车同时加入仿真的计算
+        done = False
+        car_env.CarList_calculate(Carlist, STRATEGY=STRATRGY, time_tag=time_tag, action=None)
+        s_, done, info = car_env.get_obs_done_info(Carlist, time_tag)  # 更新一下当前的状态
+
+        # 信息更新
+        turns = 0
+        while turns <= car_env.AI_DT:
+            car_env.CarList_update_info_core(Carlist, car_env.UPDATA_TIME_PER_DIDA)
+            turns += car_env.UPDATA_TIME_PER_DIDA
+
+        # 判断仿真是否结束
+        if done:
+            break
+
+    my_plot.plot_data(Carlist,write_flag=True)
+
+
+
 if __name__ == '__main__':
-    if LOAD:
-        eval()
-        # multi_strategy_eval()
+    if USE_RL_METHOD:
+        if LOAD:
+            eval()
+            # multi_strategy_eval()
+        else:
+            train()
     else:
-        train()
+        conventional_follow('ACC')
 
-
-# if __name__ == '__main__':
-#     Carlist = []
-#     # 每个episode都要reset一下
-#     Carlist.clear()
-#     time_tag = 0.0
-#     car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False,
-#                        tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6, location=[0, 75])
-#     car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False,
-#                        tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6, location=[0, 50])
-#     car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False,
-#                        tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6, location=[0, 25])
-#     car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=False,
-#                        tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6, location=[0, 0])
-#     # 将新车加入车队
-#     if len(Carlist) == 0:
-#         Carlist.append(car1)
-#         Carlist.append(car2)
-#         Carlist.append(car3)
-#         Carlist.append(car4)
-#
-#     CarList_update_platoon_info(Carlist, des_platoon_size=3, build_platoon=True)
-#
-#     while True:
-#         # 时间戳更新
-#         time_tag += car_env.AI_DT
-#         # 多车同时加入仿真的计算
-#         done = False
-#         car_env.CarList_calculate(Carlist,'ACC',time_tag=time_tag, action=None)
-#         s_, done, info = car_env.get_obs_done_info(Carlist, time_tag)  # 更新一下当前的状态
-#
-#         # 信息更新
-#         turns = 0
-#         while turns <= car_env.AI_DT:
-#             car_env.CarList_update_info_core(Carlist, car_env.UPDATA_TIME_PER_DIDA)
-#             turns += car_env.UPDATA_TIME_PER_DIDA
-#
-#         # 判断仿真是否结束
-#         if done:
-#             break
-#
-#     my_plot.plot_data(Carlist)
 
 
 # if __name__ == '__main__':

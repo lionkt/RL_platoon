@@ -7,13 +7,14 @@ MIN_ACC = -10.0
 MAX_ACC = 6.0
 MAX_V = 60 / 3.6
 TURN_MAX_V = 4.2
-ROAD_LENGTH = MAX_V * 70
+TIME_TAG_UP_BOUND = 120
+ROAD_LENGTH = MAX_V * TIME_TAG_UP_BOUND
 CAR_LENGTH = 5
 LANE_WIDTH = 3.5
 AI_DT = 0.2  # 信息决策的步长
 UPDATA_TIME_PER_DIDA = 0.03  # 在c++版本的仿真平台的3D工程中，取的时间步长是0.03
 
-START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 2
+START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 1.4
 EQUAL_TO_ZERO_SPEEED = 0.2
 
 DES_PLATOON_INTER_DISTANCE = 5  # 车队的理想间距
@@ -23,7 +24,6 @@ FOLLOW_STRATEGY = ['ACC', 'CACC', 'RL']
 # DQN强化学习相关的变量
 # action_single_step = 1  # 动作空间的步长
 # ACTION_SPACE = list(np.arange(MIN_ACC, MAX_ACC, action_single_step))
-TIME_TAG_UP_BOUND = 60.0
 
 # DDPG强化学习相关的变量
 STATE_DIM = 3
