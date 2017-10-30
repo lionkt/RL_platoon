@@ -125,6 +125,12 @@ def plot_data_core(CarList_I, write_flag):
     # plt.grid(True)
     # plt.ylabel('m')
     # plt.xlabel('time_steps')
+    write_buffer = []
+    if write_flag:
+        write_buffer = np.array(data).transpose()
+        np.savetxt('./OutputImg/location_data.txt', write_buffer)
+        print('====location data has been written=====')
+
 
     index = 0
     plot_desired_value_flag = True
