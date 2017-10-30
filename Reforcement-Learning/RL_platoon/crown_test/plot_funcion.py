@@ -7,7 +7,7 @@ from scipy.fftpack import fft, ifft
 
 
 # 画图函数核心函数
-def plot_data_core(CarList_I):
+def plot_data_core(CarList_I, write_flag):
     max_speed_length = 0
     max_acc_length = 0
     max_location_length = 0
@@ -22,6 +22,11 @@ def plot_data_core(CarList_I):
 
     # plot dynamics
     plt.figure('dynamics')
+    speed_file = None
+    write_buffer = []
+    if write_flag:
+        speed_file = open('./OutputImg/speed_file.txt','w')
+
     for single_car in CarList_I:
         if max_speed_length > len(single_car.speedData):
             data = list(np.zeros(max_speed_length - len(single_car.speedData))) + single_car.speedData
@@ -33,10 +38,20 @@ def plot_data_core(CarList_I):
             plt.plot(np.arange(max_speed_length), data, color=leader_color, label=label, linewidth=2)
         else:
             plt.plot(np.arange(max_speed_length), data, label=label, linewidth=2)
+        # 把数据写出去
+        if write_flag:
+            write_buffer.append(data)
+
     plt.title('speed')
     plt.legend(loc=4)
     plt.ylabel('m/s')
     plt.grid(True)
+    if write_flag:
+        write_buffer = np.array(write_buffer)
+        for i in range(max_speed_length):
+            speed_file.write(str(write_buffer[:, i]) + "\n")
+        print('====speed data has been written=====')
+        speed_file.close()
     # plt.xlabel('time_steps')
 
     for single_car in CarList_I:
@@ -157,8 +172,8 @@ def plot_data_core(CarList_I):
     plt.savefig(out_png, dpi=300)
 
 # 画图的函数
-def plot_data(CarList_I):
-    plot_data_core(CarList_I)
+def plot_data(CarList_I, write_flag = None):
+    plot_data_core(CarList_I, write_flag = write_flag)
     plt.show()
 
 # 存储画出的图像

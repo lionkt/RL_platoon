@@ -284,7 +284,7 @@ def train():
                 break
         # 画一下最后一次的图像
         if ep == MAX_EPISODES - 1:
-            my_plot.plot_data(Carlist)
+            my_plot.plot_data(Carlist, write_flag=True)
 
     if os.path.isdir(path): shutil.rmtree(path)
     os.mkdir(path)
@@ -354,7 +354,7 @@ def eval():
         if done:
             break
 
-    my_plot.plot_data(Carlist)
+    my_plot.plot_data(Carlist, write_flag=True)
 
 
 # 根据build_platoon，更新是否加入platoon的信息
@@ -422,7 +422,7 @@ def multi_strategy_eval():
         if done:
             break
 
-    my_plot.plot_data(Carlist)
+    my_plot.plot_data(Carlist, write_flag=True)
 
 
 if __name__ == '__main__':
