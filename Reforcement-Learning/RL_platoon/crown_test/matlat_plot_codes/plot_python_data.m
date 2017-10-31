@@ -1,16 +1,19 @@
 clc;
 clear;
 path = '../OutputImg/';
-speed_path = [path,'speed_data.txt'];
-acc_path = [path, 'acc_data.txt'];
-jerk_path = [path, 'jerk_data.txt'];
-location_path = [path, 'location_data.txt'];
-inter_dist_path = [path, 'inter-distance_data.txt'];
+% detailed_path = [path, 'ACC/4car/'];
+detailed_path = [path, 'RL/4car/'];
+speed_path = [detailed_path,'speed_data.txt'];
+acc_path = [detailed_path, 'acc_data.txt'];
+jerk_path = [detailed_path, 'jerk_data.txt'];
+location_path = [detailed_path, 'location_data.txt'];
+inter_dist_path = [detailed_path, 'inter-distance_data.txt'];
 speed_data = importdata(speed_path);
 acc_data = importdata(acc_path);
 jerk_data = importdata(jerk_path);
 location_data = importdata(location_path);
 inter_dist_data = importdata(inter_dist_path);
+
 %% 道路相关
 Time_Step = 0.2;
 Car_Length = 5;
@@ -18,7 +21,7 @@ Desired_inter_distance = 5;
 MAX_V = 60/3.6; %m/s
 ROAD_LENGTH = MAX_V * 70;
 START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 2;
-
+inter_dist_data = inter_dist_data + Car_Length;
 
 %% plot data
 
@@ -31,7 +34,7 @@ if max(ixx1)>size(inter_dist_data,1)
     ixx1(ixx1>size(inter_dist_data,1)) = [];
 end
 for i=1:size(inter_dist_data,2);
-    temp_err = inter_dist_data(ixx1,i) - ones(length(inter_dist_data(ixx1,i)),1)*(Desired_inter_distance);
+    temp_err = inter_dist_data(ixx1,i) - ones(length(inter_dist_data(ixx1,i)),1)*(Desired_inter_distance+Car_Length);
     temp_rmse = sqrt(mean(temp_err.^2));
     if i>1
         sumup = sumup+temp_rmse;
@@ -66,22 +69,34 @@ max_speed_arr = ones(size(speed_data,1),1)*MAX_V;
 plot(time1,max_speed_arr,':r','linewidth',1.7);
 hold on;
 for i=1:size(speed_data,2)
-    plot(time1, speed_data(:,i),'linewidth',1.7);
+    if i==1
+        plot(time1, speed_data(:,i),'linewidth',1.5);
+    elseif i==2
+        plot(time1, speed_data(:,i),'linewidth',1.5);
+    else
+        plot(time1, speed_data(:,i),'linewidth',1.3);
+    end
     hold on;
 end
 title('velocity');
-ylabel('m/s');
+ylabel('m/s');xlabel('time stamp(s)');
 % set(gca,'xticklabel',[]);    %隐藏x轴
 grid on;
 
 subplot(212);
 time2 = [1:1:size(acc_data,1)]*Time_Step;
 for i=1:size(acc_data,2)
-    plot(time1, acc_data(:,i),'linewidth',1.7);
+    if i==1
+        plot(time1, acc_data(:,i),'linewidth',1.5);
+    elseif i==2
+        plot(time1, acc_data(:,i),'linewidth',1.5);
+    else
+        plot(time1, acc_data(:,i),'linewidth',1.3);
+    end
     hold on;
 end
 title('acceleration');
-xlabel('time stam(s)');ylabel('m/s^2');
+xlabel('time stamp(s)');ylabel('m/s^2');
 grid on;
 % subplot(313);
 % time3 = [1:1:size(jerk_data,1)]*Time_Step;
@@ -96,7 +111,7 @@ figure;
 % suptitle('location');
 subplot(211);
 time1 = [1:1:size(inter_dist_data,1)]*Time_Step;
-des_inter_dist = ones(size(inter_dist_data,1),1)*Desired_inter_distance;
+des_inter_dist = ones(size(inter_dist_data,1),1)*(Desired_inter_distance+Car_Length);
 plot(time1,des_inter_dist,':r','linewidth',1.7);
 hold on;
 for i=1:size(inter_dist_data,2)
