@@ -33,15 +33,29 @@ ixx1 = ixx;
 if max(ixx1)>size(inter_dist_data,1)
     ixx1(ixx1>size(inter_dist_data,1)) = [];
 end
-for i=1:size(inter_dist_data,2);
+for i=1:size(inter_dist_data,2)
     temp_err = inter_dist_data(ixx1,i) - ones(length(inter_dist_data(ixx1,i)),1)*(Desired_inter_distance+Car_Length);
     temp_rmse = sqrt(mean(temp_err.^2));
     if i>1
         sumup = sumup+temp_rmse;
     end
-    disp(['第',num2str(i),'F车和前车的location RSME为：',num2str(temp_rmse),'m']);
+    disp(['第',num2str(i-1),'F车和前车的location RSME为：',num2str(temp_rmse),'m']);
 end
 disp(['从第2辆F车到第',num2str(size(inter_dist_data,2)),'的location RMSE的均值为:',num2str(sumup/(size(inter_dist_data,2)-1))]);
+
+disp('======第一次接近desired spcing的时刻为:');
+sumup = 0;
+percent = 5e-2;
+for i=1:size(inter_dist_data,2)
+   my_inter_dist = inter_dist_data(:,i);
+   time1 = [1:1:length(my_inter_dist)]*Time_Step;
+   index = find(abs(my_inter_dist - (Desired_inter_distance+Car_Length)) < percent*(Desired_inter_distance+Car_Length));
+   disp(['第',num2str(i-1),'F车首次进入desired-dist的时刻为：',num2str(time1(index(1))),'s']);
+   if i>1
+       sumup = sumup + time1(index(1));
+   end
+end
+disp(['从第2辆F车到第',num2str(size(inter_dist_data,2)),'的时刻均值为:',num2str(sumup/(size(inter_dist_data,2)-1)),'s']);
 
 disp('======速度误差为:');
 sumup =  0;
@@ -56,7 +70,7 @@ for i=2:size(location_data,2);
     if i>1
         sumup = sumup+temp_rmse;
     end
-    disp(['第',num2str(i),'F车和前车的speed RSME为：',num2str(temp_rmse),'m/s']);
+    disp(['第',num2str(i-1),'F车和前车的speed RSME为：',num2str(temp_rmse),'m/s']);
 end
 disp(['从第2辆F车到第',num2str(size(inter_dist_data,2)),'的speed RMSE的均值为:',num2str(sumup/(size(inter_dist_data,2)-1))]);
 
@@ -106,13 +120,19 @@ grid on;
 % end
 % grid on;
 
-
+%% location
 figure;
 % suptitle('location');
 subplot(211);
 time1 = [1:1:size(inter_dist_data,1)]*Time_Step;
 des_inter_dist = ones(size(inter_dist_data,1),1)*(Desired_inter_distance+Car_Length);
-plot(time1,des_inter_dist,':r','linewidth',1.7);
+up_inter_dist_error = ones(size(inter_dist_data,1),1)*(Desired_inter_distance+Car_Length)*(1+percent);
+down_inter_dist_error = ones(size(inter_dist_data,1),1)*(Desired_inter_distance+Car_Length)*(1-percent);
+plot(time1,des_inter_dist,'--r','linewidth',1.2);
+hold on;
+plot(time1,up_inter_dist_error,'--b','linewidth',1);
+hold on;
+plot(time1,down_inter_dist_error,'--b','linewidth',1);
 hold on;
 for i=1:size(inter_dist_data,2)
     plot(time1, inter_dist_data(:,i),'linewidth',1.7);
