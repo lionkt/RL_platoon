@@ -37,9 +37,9 @@ def plot_data_core(CarList_I, write_flag):
         # 把数据写出去
         if write_flag:
             write_buffer.append(data)
-    plt.title('speed')
+    # plt.title('speed')
     plt.legend(loc=4)
-    plt.ylabel('m/s')
+    plt.ylabel('velocity (m/s)')
     plt.grid(True)
     if write_flag:
         write_buffer = np.array(write_buffer).transpose()
@@ -61,9 +61,9 @@ def plot_data_core(CarList_I, write_flag):
             plt.plot(np.arange(max_acc_length), data, linewidth=1.8)
         if write_flag:
             write_buffer.append(data)
-    plt.title('acceleration')
+    # plt.title('acceleration')
     plt.legend(loc=1)
-    plt.ylabel('m/s^2')
+    plt.ylabel('acceleration (m/s^2)')
     # plt.xlabel('time_steps')
     plt.grid(True)
     if write_flag:
@@ -181,7 +181,7 @@ def plot_data_core(CarList_I, write_flag):
         plt.plot(xf_half, yf_norm_half, label=label, linewidth=2)
         # plt.xscale('log')       # 以对数为轴画图
 
-    plt.title('inter-space-error')
+    plt.title('inter-spacing')
     plt.legend(loc=1)
     plt.grid(True)
     plt.ylabel('frequency-amplitude')

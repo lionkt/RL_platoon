@@ -1,8 +1,10 @@
 clc;
 clear;
 path = '../OutputImg/';
-% detailed_path = [path, 'ACC/4car/'];
-detailed_path = [path, 'RL/4car/'];
+detailed_path = [path, 'ACC/5car/'];
+% detailed_path = [path, 'PIPES/5car/'];
+% detailed_path = [path, 'CACC/5car/'];
+% detailed_path = [path, 'RL/4car/'];
 speed_path = [detailed_path,'speed_data.txt'];
 acc_path = [detailed_path, 'acc_data.txt'];
 jerk_path = [detailed_path, 'jerk_data.txt'];
@@ -24,6 +26,7 @@ START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 2;
 inter_dist_data = inter_dist_data + Car_Length;
 
 %% plot data
+percent = 5e-2;
 
 disp('开始测试后的误差');
 disp('======location误差为:');
@@ -45,7 +48,6 @@ disp(['从第2辆F车到第',num2str(size(inter_dist_data,2)),'的location RMSE的均值为
 
 disp('======第一次接近desired spcing的时刻为:');
 sumup = 0;
-percent = 5e-2;
 for i=1:size(inter_dist_data,2)
    my_inter_dist = inter_dist_data(:,i);
    time1 = [1:1:length(my_inter_dist)]*Time_Step;

@@ -105,9 +105,9 @@ if __name__ == '__main__':
         CarList_update_platoon_info(Carlist, des_platoon_size=3, build_platoon=True)
 
         # 计算运动学信息
-        CarList_calculate(Carlist, STARTEGEY='CACC')
+        # CarList_calculate(Carlist, STARTEGEY='CACC')
         # CarList_calculate(Carlist, STARTEGEY='ACC')
-        # CarList_calculate(Carlist, STARTEGEY='PIPES')
+        CarList_calculate(Carlist, STARTEGEY='PIPES')
 
 
         # 更新运动学参数。由于c++程序的3D和CarAI的时钟不同步，需要模仿那个程序进行多轮次更新
@@ -123,4 +123,4 @@ if __name__ == '__main__':
 
 
     # 绘制结果
-    my_plot.plot_data(Carlist)
+    my_plot.plot_data(Carlist,write_flag=True)
