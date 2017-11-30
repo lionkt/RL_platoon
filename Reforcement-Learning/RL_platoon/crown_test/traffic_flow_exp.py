@@ -21,6 +21,7 @@ import tensorflow as tf
 import numpy as np
 import os
 import shutil
+import random as random
 import car_env_traffic_flow as car_env
 import plot_funcion as my_plot
 
@@ -44,8 +45,8 @@ VAR_MIN = 0.05  # 0.05
 # LOAD = False
 LOAD = True
 OUTPUT_GRAPH = True
-# USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
-USE_RL_METHOD = True  # 判断是用传统的跟驰控制，还是用RL控制
+USE_RL_METHOD = False  # 判断是用传统的跟驰控制，还是用RL控制
+# USE_RL_METHOD = True  # 判断是用传统的跟驰控制，还是用RL控制
 
 STATE_DIM = car_env.STATE_DIM
 ACTION_DIM = car_env.ACTION_DIM
@@ -113,8 +114,7 @@ class Actor(object):
             self.policy_grads = tf.gradients(ys=self.a, xs=self.e_params, grad_ys=a_grads)
 
         with tf.variable_scope('A_train'):
-            opt = tf.train.AdamOptimizer(
-                -self.lr / BATCH_SIZE)  # (- learning rate) for ascent policy, div to take mean
+            opt = tf.train.AdamOptimizer(-self.lr / BATCH_SIZE)  # (- learning rate) for ascent policy, div to take mean
             self.train_op = opt.apply_gradients(zip(self.policy_grads, self.e_params))
 
 
@@ -225,11 +225,11 @@ def train():
         # 每个episode都要reset一下
         Carlist.clear()
         time_tag = 0.0
-        car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False,
+        car1 = car_env.car(id=0, role='leader', engaged_in_platoon=False,
                            tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6, location=[0, 50])
-        car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False,
+        car2 = car_env.car(id=1, role='follower', engaged_in_platoon=False,
                            tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6, location=[0, 25])
-        car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False,
+        car3 = car_env.car(id=2, role='follower', engaged_in_platoon=False,
                            tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6, location=[0, 0])
         # 将新车加入车队
         if len(Carlist) == 0:
@@ -293,15 +293,15 @@ def eval():
     # 每个episode都要reset一下
     Carlist.clear()
     time_tag = 0.0
-    car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car1 = car_env.car(id=0, role='leader', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 75])
-    car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car2 = car_env.car(id=1, role='follower', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 50])
-    car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car3 = car_env.car(id=2, role='follower', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 25])
-    car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car4 = car_env.car(id=3, role='follower', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 0])
-    car5 = car_env.car(id=4, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car5 = car_env.car(id=4, role='follower', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, -25])
     # 将新车加入车队
     if len(Carlist) == 0:
@@ -309,7 +309,7 @@ def eval():
         Carlist.append(car2)
         Carlist.append(car3)
         Carlist.append(car4)
-        # Carlist.append(car5)
+        Carlist.append(car5)
     CarList_update_platoon_info(Carlist, des_platoon_size=len(Carlist), build_platoon=True)  # 把车辆加入车队
 
     s = car_env.reset(Carlist)
@@ -372,13 +372,13 @@ def multi_strategy_eval():
     # 每个episode都要reset一下
     Carlist.clear()
     time_tag = 0.0
-    car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car1 = car_env.car(id=0, role='leader', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 75])
-    car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car2 = car_env.car(id=1, role='follower', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 50])
-    car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car3 = car_env.car(id=2, role='follower', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 25])
-    car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car4 = car_env.car(id=3, role='follower', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 0])
     # 将新车加入车队
     if len(Carlist) == 0:
@@ -420,20 +420,20 @@ def multi_strategy_eval():
     my_plot.plot_data(Carlist, write_flag=True)
 
 
-def conventional_follow(STRATRGY):
+def conventional_follow(STRATEGY):
     Carlist = []
     # 每个episode都要reset一下
     Carlist.clear()
     time_tag = 0.0
-    car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car1 = car_env.car(id=0, role='leader', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 75])
-    car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car2 = car_env.car(id=1, role='follower', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 50])
-    car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car3 = car_env.car(id=2, role='follower', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 25])
-    car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car4 = car_env.car(id=3, role='follower', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, 0])
-    car5 = car_env.car(id=4, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car5 = car_env.car(id=4, role='follower', engaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, location=[0, -25])
     # 将新车加入车队
     if len(Carlist) == 0:
@@ -450,7 +450,7 @@ def conventional_follow(STRATRGY):
         time_tag += car_env.AI_DT
         # 多车同时加入仿真的计算
         done = False
-        car_env.CarList_calculate(Carlist, STRATEGY=STRATRGY, time_tag=time_tag, test_flag=False, action=None)
+        car_env.CarList_calculate(Carlist, STRATEGY=STRATEGY, time_tag=time_tag, test_flag=False, action=None)
         s_, done, info = car_env.get_obs_done_info(Carlist, time_tag)  # 更新一下当前的状态
 
         # 信息更新
@@ -466,6 +466,80 @@ def conventional_follow(STRATRGY):
     my_plot.plot_data(Carlist, write_flag=True)
 
 
+def traffic_flow(STRATEGY):
+    Carlist = []
+    Platoon_length_list = []  # 记录小车队的长度
+    # 每个episode都要reset一下
+    Carlist.clear()
+    # 仿真的整体iter
+    time_tag = 0.0
+    time_tag_iter = 0
+    id_iter = 0
+    des_temp_platoon_length = random.randint(3, 5)  # 随机的platoon长度为3-5
+    Platoon_length_list.append(des_temp_platoon_length)
+    cur_temp_platoon_length = 0
+
+    # 交通流参数
+    Uni_Gen_Bound = 9  # 均匀分布测试，计数器到Uni_Gen_Bound，才产生一辆车
+    done = False
+
+    while not done:
+
+        # 车辆生成
+        if time_tag_iter % Uni_Gen_Bound == 0:
+            if cur_temp_platoon_length % des_temp_platoon_length == 0:
+                # 情况1：车队为空或者已满
+                if cur_temp_platoon_length == des_temp_platoon_length:  # 如果车队已经满了
+                    cur_temp_platoon_length = 0
+                    des_temp_platoon_length = random.randint(3, 5)  # 随机的platoon长度为3-5
+                    Platoon_length_list.append(des_temp_platoon_length)
+                else:  # 如果车队未满
+                    cur_temp_platoon_length = 0
+                # 车队由于engaged_in_platoon决定了是否进行车队跟驰，所以可以用来控制leader的行为
+                car_gen = car_env.car(id=id_iter, role='leader', engaged_in_platoon=False,
+                                      tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6,
+                                      location=[0, 0])
+                cur_temp_platoon_length += 1
+                id_iter += 1
+                Carlist.append(car_gen)
+            else:
+                # 情况2：车队还没组建完
+                car_gen = car_env.car(id=id_iter, role='follower', engaged_in_platoon=True,
+                                      tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6,
+                                      location=[0, 0])
+                cur_temp_platoon_length += 1
+                id_iter += 1
+                Carlist.append(car_gen)
+
+        # 车辆运动计算
+        platoon_start_ptr = 0  # 用来截取Carlist的指针
+        platoon_end_ptr = 0  # 用来截取Carlist的指针
+        for index in range(len(Platoon_length_list)):
+            if index != len(Platoon_length_list) - 1:  # 如果不是最后一个车队
+                platoon_end_ptr += Platoon_length_list[index]
+
+            else:  # 如果是最后一个车队
+                platoon_end_ptr += cur_temp_platoon_length
+            car_env.CarList_calculate(Carlist[platoon_start_ptr:platoon_end_ptr], STRATEGY=STRATEGY, time_tag=time_tag,
+                                      test_flag=False, action=None)
+            platoon_start_ptr = platoon_end_ptr
+            s_, done, info = car_env.get_obs_done_info(Carlist, time_tag)  # 更新一下当前的状态
+
+        # 车辆运动学信息更新
+        turns = 0
+        while turns <= car_env.AI_DT:
+            car_env.CarList_update_info_core(Carlist, car_env.UPDATA_TIME_PER_DIDA)
+            turns += car_env.UPDATA_TIME_PER_DIDA
+
+        # 时间戳更新
+        time_tag += car_env.AI_DT
+        time_tag_iter += 1
+        print('===now-car-number:', len(Carlist))
+
+    # end of while not done
+    my_plot.plot_data(Carlist, write_flag=False)
+
+
 if __name__ == '__main__':
     if USE_RL_METHOD:
         if LOAD:
@@ -474,4 +548,5 @@ if __name__ == '__main__':
         else:
             train()
     else:
-        conventional_follow('ACC')
+        # conventional_follow('ACC')
+        traffic_flow('ACC')

@@ -33,7 +33,7 @@ ACTION_BOUND = [MIN_ACC, MAX_ACC]
 
 # define car
 class car(object):
-    def __init__(self, id, role, tar_interDis, tar_speed, location=None, ingaged_in_platoon=None,
+    def __init__(self, id, role, tar_interDis, tar_speed, location=None, engaged_in_platoon=None,
                  leader=None, previousCar=None, car_length=None):
         self.id = id
         self.role = role
@@ -46,7 +46,7 @@ class car(object):
 
         self.target_interDis = tar_interDis
         self.target_speed = tar_speed
-        self.engaged_in_platoon = ingaged_in_platoon if ingaged_in_platoon else False  # 默认不参加
+        self.engaged_in_platoon = True if engaged_in_platoon else False  # 默认不参加
         self.leader = leader
         self.previousCar = previousCar
         self.length = CAR_LENGTH if not car_length else car_length
@@ -480,9 +480,9 @@ def get_obs_done_info(Carlist, time_tag):
     # observation = np.array(data_list)
     leader_v = data_list[0]
     leader_y = data_list[1]
-    if len(Carlist) == 1:
-        print('ERROR: 车队中只有一辆车')
-        return None
+    if len(Carlist) <= 2:
+        # print('ERROR: 车队中只有一辆车')
+        return observation, done, info
     else:
         follower1_v = data_list[2]
         follower1_y = data_list[3]
