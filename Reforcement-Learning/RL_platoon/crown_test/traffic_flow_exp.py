@@ -476,50 +476,46 @@ def traffic_flow(STRATEGY):
     time_tag_iter = 0
     id_iter = 0
     des_temp_platoon_length = random.randint(3, 5)  # 随机的platoon长度为3-5
-    Platoon_length_list.append(des_temp_platoon_length)
     cur_temp_platoon_length = 0
+    Platoon_length_list.append(cur_temp_platoon_length)
 
     # 交通流参数
-    Uni_Gen_Bound = 9  # 均匀分布测试，计数器到Uni_Gen_Bound，才产生一辆车
+    Unify_Gen_Bound = 9  # 均匀分布测试，计数器到Uni_Gen_Bound，才产生一辆车
     done = False
 
     while not done:
 
         # 车辆生成
-        if time_tag_iter % Uni_Gen_Bound == 0:
+        if time_tag_iter % Unify_Gen_Bound == 0:
             if cur_temp_platoon_length % des_temp_platoon_length == 0:
                 # 情况1：车队为空或者已满
                 if cur_temp_platoon_length == des_temp_platoon_length:  # 如果车队已经满了
                     cur_temp_platoon_length = 0
                     des_temp_platoon_length = random.randint(3, 5)  # 随机的platoon长度为3-5
-                    Platoon_length_list.append(des_temp_platoon_length)
+                    Platoon_length_list.append(0)
                 else:  # 如果车队未满
                     cur_temp_platoon_length = 0
                 # 车队由于engaged_in_platoon决定了是否进行车队跟驰，所以可以用来控制leader的行为
+
                 car_gen = car_env.car(id=id_iter, role='leader', engaged_in_platoon=False,
                                       tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6,
                                       location=[0, 0])
-                cur_temp_platoon_length += 1
-                id_iter += 1
-                Carlist.append(car_gen)
             else:
                 # 情况2：车队还没组建完
                 car_gen = car_env.car(id=id_iter, role='follower', engaged_in_platoon=True,
                                       tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6,
                                       location=[0, 0])
-                cur_temp_platoon_length += 1
-                id_iter += 1
-                Carlist.append(car_gen)
+            cur_temp_platoon_length += 1
+            Platoon_length_list[-1] = cur_temp_platoon_length
+            id_iter += 1
+            Carlist.append(car_gen)
+
 
         # 车辆运动计算
         platoon_start_ptr = 0  # 用来截取Carlist的指针
         platoon_end_ptr = 0  # 用来截取Carlist的指针
         for index in range(len(Platoon_length_list)):
-            if index != len(Platoon_length_list) - 1:  # 如果不是最后一个车队
-                platoon_end_ptr += Platoon_length_list[index]
-
-            else:  # 如果是最后一个车队
-                platoon_end_ptr += cur_temp_platoon_length
+            platoon_end_ptr += Platoon_length_list[index]
             car_env.CarList_calculate(Carlist[platoon_start_ptr:platoon_end_ptr], STRATEGY=STRATEGY, time_tag=time_tag,
                                       test_flag=False, action=None)
             platoon_start_ptr = platoon_end_ptr
