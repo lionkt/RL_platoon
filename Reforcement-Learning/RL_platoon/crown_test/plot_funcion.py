@@ -194,7 +194,7 @@ def plot_data_core(CarList_I, write_flag):
     for index in range(len(data)):
         label = 'car' + str(index + 1)
         plt.plot(np.arange(max_location_length), data[index], label=label, linewidth=1.5)
-    plt.title('inter-space-error')
+    plt.title('inter-space')
     plt.legend(loc=1)
     plt.grid(True)
     plt.ylabel('y-position')

@@ -352,6 +352,60 @@ def eval():
     my_plot.plot_data(Carlist, write_flag=True)
 
 
+def eval_traffic_flow():
+    Carlist = []
+    Platoon_length_list = []  # 记录小车队的长度
+    # 每个episode都要reset一下
+    Carlist.clear()
+    # 仿真的整体iter
+    time_tag = 0.0
+    time_tag_iter = 0
+    id_iter = 0
+    des_temp_platoon_length = random.randint(3, 5)  # 随机的platoon长度为3-5
+    cur_temp_platoon_length = 0
+    Platoon_length_list.append(cur_temp_platoon_length)
+
+    # 交通流参数
+    Unify_Gen_Bound = 9  # 均匀分布测试，计数器到Uni_Gen_Bound，才产生一辆车
+    done = False
+    s = car_env.reset(Carlist)
+    while not done:
+        # 车辆生成
+        if time_tag_iter % Unify_Gen_Bound == 0:
+            if cur_temp_platoon_length % des_temp_platoon_length == 0:
+                # 情况1：车队为空或者已满
+                if cur_temp_platoon_length == des_temp_platoon_length:  # 如果车队已经满了
+                    cur_temp_platoon_length = 0
+                    des_temp_platoon_length = random.randint(3, 5)  # 随机的platoon长度为3-5
+                    Platoon_length_list.append(0)
+                else:  # 如果车队未满
+                    cur_temp_platoon_length = 0
+                # 车队由于engaged_in_platoon决定了是否进行车队跟驰，所以可以用来控制leader的行为
+
+                car_gen = car_env.car(id=id_iter, role='leader', engaged_in_platoon=False,
+                                      tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6,
+                                      location=[0, 0])
+            else:
+                # 情况2：车队还没组建完
+                car_gen = car_env.car(id=id_iter, role='follower', engaged_in_platoon=True,
+                                      tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6,
+                                      location=[0, 0])
+            cur_temp_platoon_length += 1
+            Platoon_length_list[-1] = cur_temp_platoon_length
+            id_iter += 1
+            Carlist.append(car_gen)
+
+        # 车辆运动计算
+        platoon_start_ptr = 0  # 用来截取Carlist的指针
+        platoon_end_ptr = 0  # 用来截取Carlist的指针
+
+
+
+
+
+
+
+
 # 根据build_platoon，更新是否加入platoon的信息
 def CarList_update_platoon_info(Carlist, des_platoon_size, build_platoon):
     if build_platoon == False:
@@ -466,7 +520,7 @@ def conventional_follow(STRATEGY):
     my_plot.plot_data(Carlist, write_flag=True)
 
 
-def traffic_flow(STRATEGY):
+def conventional_follow_traffic_flow(STRATEGY):
     Carlist = []
     Platoon_length_list = []  # 记录小车队的长度
     # 每个episode都要reset一下
@@ -545,4 +599,4 @@ if __name__ == '__main__':
             train()
     else:
         # conventional_follow('ACC')
-        traffic_flow('ACC')
+        conventional_follow_traffic_flow('ACC')
