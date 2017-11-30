@@ -131,7 +131,6 @@ def plot_data_core(CarList_I, write_flag):
         np.savetxt('./OutputImg/location_data.txt', write_buffer)
         print('====location data has been written=====')
 
-
     index = 0
     plot_desired_value_flag = True
     inter_distance_list = []
@@ -188,6 +187,19 @@ def plot_data_core(CarList_I, write_flag):
     plt.xlabel('time_steps')
 
     out_png = './OutputImg/location.png'  # save file
+    plt.savefig(out_png, dpi=300)
+
+    # 添加时间位移曲线
+    plt.figure('location-time')
+    for index in range(len(data)):
+        label = 'car' + str(index + 1)
+        plt.plot(np.arange(max_location_length), data[index], label=label, linewidth=1.5)
+    plt.title('inter-space-error')
+    plt.legend(loc=1)
+    plt.grid(True)
+    plt.ylabel('y-position')
+    plt.xlabel('time_steps')
+    out_png = './OutputImg/location-time.png'  # save file
     plt.savefig(out_png, dpi=300)
 
 # 画图的函数
