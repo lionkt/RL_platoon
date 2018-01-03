@@ -1,17 +1,18 @@
 import matplotlib.pyplot as plt
-import car_env as car_env
+import car_env_DDPG_3cars as car_env
 import numpy as np
 
 DES_PLATOON_INTER_DISTANCE = car_env.DES_PLATOON_INTER_DISTANCE
-MAX_pure_distance = 20
+MAX_pure_distance = 25
 MAX_pure_v = 3.5
 
 
 def get_reward1(pure_interDistance):
+    # 关于距离的reward
     if pure_interDistance <= DES_PLATOON_INTER_DISTANCE:
-        r1 = 1 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.02) - 3 / (pure_interDistance + 0.005)
+        r1 = 3 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.008) - 3 / (pure_interDistance/4 + 0.005)
     elif pure_interDistance <= MAX_pure_distance:
-        r1 = 3 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.02) - 1 / (
+        r1 = 3 / (np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) + 0.01) - 1 / (
             np.abs(pure_interDistance - MAX_pure_distance) + 0.03)
     else:
         r1 = 1 / (np.abs(MAX_pure_distance - DES_PLATOON_INTER_DISTANCE) + 0.05) - 1 / (
@@ -20,13 +21,14 @@ def get_reward1(pure_interDistance):
     return r1
 
 
-def get_reward2(delta_v):
-    if delta_v <= -MAX_pure_v:
+def get_reward2(delta_v_f2_with_f1):
+    # 关于第二辆车速度的reward
+    if delta_v_f2_with_f1 <= -MAX_pure_v:
         r2 = 1 / (np.abs(-MAX_pure_v - 0.0) + 0.05) - 1 / (np.abs(-MAX_pure_v + MAX_pure_v) + 0.04)
-    elif delta_v <= 0.0:
-        r2 = 1 / (np.abs(delta_v - 0.0) + 0.05) - 1 / (np.abs(delta_v + MAX_pure_v) + 0.04)
-    elif delta_v <= MAX_pure_v:
-        r2 = 1 / (np.abs(delta_v - 0.0) + 0.05) - 1 / (np.abs(delta_v - MAX_pure_v) + 0.04)
+    elif delta_v_f2_with_f1 <= 0.0:
+        r2 = 1 / (np.abs(delta_v_f2_with_f1 - 0.0) + 0.05) - 1 / (np.abs(delta_v_f2_with_f1 + MAX_pure_v) + 0.04)
+    elif delta_v_f2_with_f1 <= MAX_pure_v:
+        r2 = 1 / (np.abs(delta_v_f2_with_f1 - 0.0) + 0.05) - 1 / (np.abs(delta_v_f2_with_f1 - MAX_pure_v) + 0.04)
     else:
         r2 = 1 / (np.abs(MAX_pure_v - 0.0) + 0.03) - 1 / (np.abs(MAX_pure_v - MAX_pure_v) + 0.04)
     # return r1 * 0.123 + r2 * 0.045
@@ -54,20 +56,22 @@ for index in range(len(pure_distance_l)):
 for index in range(len(pure_distance_h)):
     r1_h.append(get_reward1(pure_interDistance=pure_distance_h[index]))
 for index in range(len(delta_v_l)):
-    r2_l.append(get_reward2(delta_v=delta_v_l[index]))
+    r2_l.append(get_reward2(delta_v_f2_with_f1=delta_v_l[index]))
 for index in range(len(delta_v_h)):
-    r2_h.append(get_reward2(delta_v=delta_v_h[index]))
+    r2_h.append(get_reward2(delta_v_f2_with_f1=delta_v_h[index]))
 
-# plt.plot(pure_distance_l, r1_l, linewidth=2, label='less than desired-distance')
-# plt.plot(pure_distance_h, r1_h, color='red', linewidth=2, label='more than desired-distance')
-# plt.plot(desired_distance_list,height,'--',linewidth=1.5,label='desired-distance')
-# plt.ylim(-80, 40)
-# plt.xlabel('inter-distance/m')
-# plt.ylabel('reward value')
-# plt.legend(loc=4)
-# plt.grid()
+plt.figure()
+plt.plot(pure_distance_l, r1_l, linewidth=2, label='less than desired-distance')
+plt.plot(pure_distance_h, r1_h, color='red', linewidth=2, label='more than desired-distance')
+plt.plot(desired_distance_list,height,'--',linewidth=1.5,label='desired-distance')
+plt.ylim(-80, 40)
+plt.xlabel('inter-distance/m')
+plt.ylabel('reward value')
+plt.legend(loc=4)
+plt.grid()
 # plt.show()
 
+plt.figure()
 plt.plot(delta_v_l, r2_l, linewidth=2, label='less than desired-delta_speed')
 plt.plot(delta_v_h, r2_h, color='red', linewidth=2, label='more than desired-delta_speed')
 plt.plot(desired_v_list,height_v,'--',linewidth=1.5,label='desired-delta_speed')
