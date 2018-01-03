@@ -31,11 +31,11 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 np.random.seed(1)
 tf.set_random_seed(1)
 
-MAX_EPISODES = 1200  # 2500
+MAX_EPISODES = 1200  # 1200
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
-GAMMA = 0.999  # reward discount
+GAMMA = 0.999  # reward discount， original 0.999
 REPLACE_ITER_A = 1100
 REPLACE_ITER_C = 1000
 MEMORY_CAPACITY = 10000
@@ -43,8 +43,8 @@ BATCH_SIZE = 128     # 32 get better output than 16
 VAR_MIN = 0.01       # 0.05
 
 
-# LOAD = False
-LOAD = True
+LOAD = False
+# LOAD = True
 OUTPUT_GRAPH = True
 # USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
 USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
@@ -233,6 +233,8 @@ def train():
     explore_list = []
     info_list = []
     observation_list = []
+    plot_interval = 8   # 绘制训练图像的次数
+    plot_iter = 1       # 当前的训练图绘制次数
     # train parameters
     var = 5  # control exploration, original 2.5
     var_damp = 0.999958  # var damping ratio, original 0.99995
@@ -302,9 +304,11 @@ def train():
         # 画一下最后一次的图像
         if ep == MAX_EPISODES - 1:
             train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list,
-                                       write_flag=False, title_in=ep/MAX_EPISODES*100)
+                                       write_flag=False, title_in=1*100)
             my_plot.plot_data(Carlist, write_flag=True)
-        if ep == MAX_EPISODES//2:
+        # 画一下训练过程中的图像
+        if ep == MAX_EPISODES//plot_interval*plot_iter:
+            plot_iter += 1
             train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list,
                                        write_flag=False, title_in=ep/MAX_EPISODES*100)
 
