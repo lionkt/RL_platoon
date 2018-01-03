@@ -1,7 +1,7 @@
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-import car_env as car_env
+import car_env_DDPG_3cars as car_env_3_car
 import numpy as np
 from scipy.fftpack import fft, ifft
 
@@ -82,11 +82,11 @@ def plot_data_core(CarList_I, write_flag):
         data2 = np.array(data[1: ])
         data = np.array(data[ :-1])
         if single_car.role == 'leader':
-            plt.plot(np.arange(max_acc_length-1), (data2-data)/car_env.AI_DT, color=leader_color, linewidth=2)
+            plt.plot(np.arange(max_acc_length-1), (data2-data)/car_env_3_car.AI_DT, color=leader_color, linewidth=2)
         else:
-            plt.plot(np.arange(max_acc_length-1),  (data2-data)/car_env.AI_DT, linewidth=1.8)
+            plt.plot(np.arange(max_acc_length-1),  (data2-data)/car_env_3_car.AI_DT, linewidth=1.8)
         if write_flag:
-            write_buffer.append(list((data2-data)/car_env.AI_DT))
+            write_buffer.append(list((data2-data)/car_env_3_car.AI_DT))
     plt.title('jerk')
     plt.legend(loc=1)
     plt.ylabel('m/s^3')
@@ -139,14 +139,14 @@ def plot_data_core(CarList_I, write_flag):
     for index in range(len(data) - 1):
         plt.subplot(211)
         label = 'car' + str(index + 1) + '-car' + str(index + 2)
-        inter_distance_list.append(np.array(data[index]) - np.array(data[index + 1]) - car_env.CAR_LENGTH)
+        inter_distance_list.append(np.array(data[index]) - np.array(data[index + 1]) - car_env_3_car.CAR_LENGTH)
         plt.plot(np.arange(max_location_length), inter_distance_list[index], label=label, linewidth=1.5)
         if write_flag:
             write_buffer.append(inter_distance_list[index])
 
     if plot_desired_value_flag:
         length_inter_space = list(np.arange(0,300,1))
-        desired_inter_space = list(car_env.DES_PLATOON_INTER_DISTANCE * np.ones(len(length_inter_space)))
+        desired_inter_space = list(car_env_3_car.DES_PLATOON_INTER_DISTANCE * np.ones(len(length_inter_space)))
         plt.plot(length_inter_space, desired_inter_space,'--',linewidth=1.5,label='desired inter-space')
     plt.title('inter-space')
     plt.legend(loc=1)
@@ -160,7 +160,7 @@ def plot_data_core(CarList_I, write_flag):
 
 
     index = 0
-    # correction = car_env.DES_PLATOON_INTER_DISTANCE
+    # correction = car_env_3_car.DES_PLATOON_INTER_DISTANCE
     correction = 0.0 #
     for index in range(len(inter_distance_list) - 1):
         inter_distance_1 = inter_distance_list[index]

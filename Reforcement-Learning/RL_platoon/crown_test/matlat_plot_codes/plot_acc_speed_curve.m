@@ -1,7 +1,9 @@
 %单纯的用来绘制quadratic envelope
-
-MAX_ACC = 6;
-MIN_ACC = -10;
+%%%% 原始的加速度和速度上限
+% MAX_ACC = 6;
+% MIN_ACC = -10;
+MAX_ACC = 2.5;
+MIN_ACC = -4;
 MAX_V = 60/3.6;
 
 step = 0.001;
