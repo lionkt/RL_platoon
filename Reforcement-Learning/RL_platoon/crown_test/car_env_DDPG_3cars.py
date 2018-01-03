@@ -3,8 +3,13 @@ import scipy as sp
 
 # define boundary
 MAX_CAR_NUMBER = 5  # 最大的车辆数目
-MIN_ACC = -10.0
-MAX_ACC = 6.0
+### 半实物仿真的ACC参数
+# MIN_ACC = -10.0
+# MAX_ACC = 6.0
+### Acceleration-Deceleration Behaviour of Various Vehicle Types论文的参数
+MIN_ACC = -4
+MAX_ACC = 2.5
+
 MAX_V = 60 / 3.6
 TURN_MAX_V = 4.2
 TIME_TAG_UP_BOUND = 120
@@ -12,12 +17,12 @@ ROAD_LENGTH = MAX_V * TIME_TAG_UP_BOUND
 CAR_LENGTH = 5
 LANE_WIDTH = 3.5
 AI_DT = 0.2  # 信息决策的步长
-UPDATA_TIME_PER_DIDA = 0.03  # 在c++版本的仿真平台的3D工程中，取的时间步长是0.03
+UPDATE_TIME_PER_DIDA = 0.03  # 在c++版本的仿真平台的3D工程中，取的时间步长是0.03
 
 START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 1.4
-EQUAL_TO_ZERO_SPEEED = 0.2
+EQUAL_TO_ZERO_SPEED = 0.2
 
-DES_PLATOON_INTER_DISTANCE = 5  # 车队的理想间距
+DES_PLATOON_INTER_DISTANCE = 12.5  # 车队的理想间距，单位是m
 ROLE_SPACE = ['leader', 'follower']
 FOLLOW_STRATEGY = ['ACC', 'CACC', 'RL']
 
@@ -244,7 +249,7 @@ class car(object):
                 if self.location[1] >= START_LEADER_TEST_DISTANCE:
                     if self.start_test == False:
                         self.start_test = True
-                    if self.speed > EQUAL_TO_ZERO_SPEEED:
+                    if self.speed > EQUAL_TO_ZERO_SPEED:
                         self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.8)
                     else:
                         self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.9)
@@ -346,8 +351,8 @@ class car(object):
         if self.role == 'follower':
             alpha_2 = 0.0
             if STRATEGY == 'RL':
-                alpha_2 = 0.635  # 0.55
-            if strategy_flag == 1:
+                alpha_2 = 0.61  # 0.635
+            if strategy_flag == 1:  # 到达了multi-strategy的切换点
                 alpha_2 = 0.8
             self.acc = alpha_2 * old_acc + (1 - alpha_2) * self.acc
 
@@ -397,8 +402,8 @@ def step_next(Carlist, time_tag, action):
     turns = 0
     done = False
     while turns <= AI_DT:
-        CarList_update_info_core(Carlist, UPDATA_TIME_PER_DIDA)
-        turns += UPDATA_TIME_PER_DIDA
+        CarList_update_info_core(Carlist, UPDATE_TIME_PER_DIDA)
+        turns += UPDATE_TIME_PER_DIDA
 
     # 设计终止条件
     # 1.时间到头了
