@@ -2,7 +2,7 @@
 %%%% 原始的加速度和速度上限
 % MAX_ACC = 6;
 % MIN_ACC = -10;
-MAX_ACC = 2.5;
+MAX_ACC = 3;
 MIN_ACC = -4;
 MAX_V = 60/3.6;
 
@@ -27,12 +27,12 @@ slow_downcalcValue = k * (speed - m) .* (speed - m) + MIN_ACC;
 slow_downcalcValue = [0, slow_downcalcValue, 0];
 
 figure;
-plot(speed_plot,speed_up_calcValue,'--','linewidth',7);
+plot(speed_plot,speed_up_calcValue,'linewidth',2);
 hold on;
-plot(speed_plot,slow_downcalcValue,':','linewidth',7);
-fill(speed_plot,speed_up_calcValue,[0.8706 0.9216 0.9804]);
-fill(speed_plot,slow_downcalcValue,[0.8706 0.9216 0.9804]);
-title('Acc-Vel Quadratic Envelope');
+plot(speed_plot,slow_downcalcValue,'linewidth',2);
+% fill(speed_plot,speed_up_calcValue,[0.8706 0.9216 0.9804]);
+% fill(speed_plot,slow_downcalcValue,[0.8706 0.9216 0.9804]);
+title('Acceleration Velocity Quadratic Envelope','fontweight','bold');
 xlabel('velocity (m/s)'); ylabel('acceleraton (m/s^2)');
 grid on;
 

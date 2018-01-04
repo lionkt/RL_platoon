@@ -2,7 +2,8 @@ clc;
 clear;
 path = '../OutputImg/';
 % detailed_path = [path, 'ACC/4car/'];
-detailed_path = [path, 'RL/4car/'];
+detailed_path = [path, 'RL/brake/'];
+% detailed_path = [path, 'RL/4car/'];
 speed_path = [detailed_path,'speed_data.txt'];
 acc_path = [detailed_path, 'acc_data.txt'];
 jerk_path = [detailed_path, 'jerk_data.txt'];
@@ -57,7 +58,7 @@ for i=1:size(inter_dist_data,2)
 end
 disp(['从第2辆F车到第',num2str(size(inter_dist_data,2)),'的时刻均值为:',num2str(sumup/(size(inter_dist_data,2)-1)),'s']);
 
-disp('======速度误差为:');
+disp('======速度误差为:(leader,0F,1F,2F,3F...)');
 sumup =  0;
 ixx2 = ixx;
 if max(ixx2)>size(speed_data,1)
@@ -67,10 +68,10 @@ leader_test_speed = speed_data(ixx2,1);
 for i=2:size(location_data,2);
     temp_err = speed_data(ixx2,i)-leader_test_speed;
     temp_rmse = sqrt(mean(temp_err.^2));
-    if i>1
+    if i>2
         sumup = sumup+temp_rmse;
     end
-    disp(['第',num2str(i-1),'F车和前车的speed RSME为：',num2str(temp_rmse),'m/s']);
+    disp(['第',num2str(i-2),'F车和前车的speed RSME为：',num2str(temp_rmse),'m/s']);
 end
 disp(['从第2辆F车到第',num2str(size(inter_dist_data,2)),'的speed RMSE的均值为:',num2str(sumup/(size(inter_dist_data,2)-1))]);
 
@@ -92,7 +93,7 @@ for i=1:size(speed_data,2)
     end
     hold on;
 end
-title('velocity');
+title('Velocity','fontweight','bold');
 ylabel('m/s');xlabel('time stamp(s)');
 % set(gca,'xticklabel',[]);    %隐藏x轴
 grid on;
@@ -109,7 +110,7 @@ for i=1:size(acc_data,2)
     end
     hold on;
 end
-title('acceleration');
+title('Acceleration','fontweight','bold');
 xlabel('time stamp(s)');ylabel('m/s^2');
 grid on;
 % subplot(313);
@@ -122,8 +123,7 @@ grid on;
 
 %% location
 figure;
-% suptitle('location');
-subplot(211);
+% subplot(211);
 time1 = [1:1:size(inter_dist_data,1)]*Time_Step;
 des_inter_dist = ones(size(inter_dist_data,1),1)*(Desired_inter_distance+Car_Length);
 up_inter_dist_error = ones(size(inter_dist_data,1),1)*(Desired_inter_distance+Car_Length)*(1+percent);
@@ -138,21 +138,21 @@ for i=1:size(inter_dist_data,2)
     plot(time1, inter_dist_data(:,i),'linewidth',1.7);
     hold on;
 end
-title('Inter-vehicle Spacing');
+title('Inter-vehicle Spacing','fontweight','bold');
 ylabel('m');xlabel('time stamp (s)');
 grid on;
-subplot(212);
-for i=1:size(inter_dist_data,2)-1
-    inter_dist_1 = inter_dist_data(:,i);
-    inter_dist_2 = inter_dist_data(:,i+1);
-    yf_norm = abs(fft(inter_dist_2) ./ fft(inter_dist_1));
-    yf_norm_half = yf_norm(1:int32(length(yf_norm)/2));
-    plot(yf_norm_half,'linewidth',1.7);
-    hold on;
-end
-grid on;
-title('Frequency Domain Error Ratio');
-ylabel('amplitude');xlabel('frequency');
+% subplot(212);
+% for i=1:size(inter_dist_data,2)-1
+%     inter_dist_1 = inter_dist_data(:,i);
+%     inter_dist_2 = inter_dist_data(:,i+1);
+%     yf_norm = abs(fft(inter_dist_2) ./ fft(inter_dist_1));
+%     yf_norm_half = yf_norm(1:int32(length(yf_norm)/2));
+%     plot(yf_norm_half,'linewidth',1.7);
+%     hold on;
+% end
+% grid on;
+% title('Frequency Domain Error Ratio');
+% ylabel('amplitude');xlabel('frequency');
 
 
 
