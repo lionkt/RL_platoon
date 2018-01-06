@@ -1,8 +1,8 @@
 """
-Environment is a Robot Arm. The arm tries to get to the blue point.
-The environment will return a geographic (distance) information for the arm to learn.
+Environment is a 2D car.
+Car has 5 sensors to obtain distance information.
 
-The far away from blue point the less reward; touch blue r+=1; stop at blue for a while then get r=+10.
+Car collision => reward = -1, otherwise => reward = 0.
  
 You can train this RL by using LOAD = False, after training, this model will be store in the a local folder.
 Using LOAD = True to reload the trained model for playing.
@@ -21,28 +21,27 @@ import tensorflow as tf
 import numpy as np
 import os
 import shutil
-from arm_env import ArmEnv
+from car_env import CarEnv
 
 
 np.random.seed(1)
 tf.set_random_seed(1)
 
-MAX_EPISODES = 600
-MAX_EP_STEPS = 200
+MAX_EPISODES = 500
+MAX_EP_STEPS = 600
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
 GAMMA = 0.9  # reward discount
-REPLACE_ITER_A = 1100
-REPLACE_ITER_C = 1000
-MEMORY_CAPACITY = 5000
+REPLACE_ITER_A = 800
+REPLACE_ITER_C = 700
+MEMORY_CAPACITY = 2000
 BATCH_SIZE = 16
 VAR_MIN = 0.1
 RENDER = True
 LOAD = False
-MODE = ['easy', 'hard']
-n_model = 1
+DISCRETE_ACTION = False
 
-env = ArmEnv(mode=MODE[n_model])
+env = CarEnv(discrete_action=DISCRETE_ACTION)
 STATE_DIM = env.state_dim
 ACTION_DIM = env.action_dim
 ACTION_BOUND = env.action_bound
@@ -79,14 +78,11 @@ class Actor(object):
         with tf.variable_scope(scope):
             init_w = tf.contrib.layers.xavier_initializer()
             init_b = tf.constant_initializer(0.001)
-            net = tf.layers.dense(s, 200, activation=tf.nn.relu6,
+            net = tf.layers.dense(s, 100, activation=tf.nn.relu,
                                   kernel_initializer=init_w, bias_initializer=init_b, name='l1',
                                   trainable=trainable)
-            net = tf.layers.dense(net, 200, activation=tf.nn.relu6,
+            net = tf.layers.dense(net, 20, activation=tf.nn.relu,
                                   kernel_initializer=init_w, bias_initializer=init_b, name='l2',
-                                  trainable=trainable)
-            net = tf.layers.dense(net, 10, activation=tf.nn.relu,
-                                  kernel_initializer=init_w, bias_initializer=init_b, name='l3',
                                   trainable=trainable)
             with tf.variable_scope('a'):
                 actions = tf.layers.dense(net, self.a_dim, activation=tf.nn.tanh, kernel_initializer=init_w,
@@ -152,16 +148,13 @@ class Critic(object):
             init_b = tf.constant_initializer(0.01)
 
             with tf.variable_scope('l1'):
-                n_l1 = 200
+                n_l1 = 100
                 w1_s = tf.get_variable('w1_s', [self.s_dim, n_l1], initializer=init_w, trainable=trainable)
                 w1_a = tf.get_variable('w1_a', [self.a_dim, n_l1], initializer=init_w, trainable=trainable)
                 b1 = tf.get_variable('b1', [1, n_l1], initializer=init_b, trainable=trainable)
                 net = tf.nn.relu6(tf.matmul(s, w1_s) + tf.matmul(a, w1_a) + b1)
-            net = tf.layers.dense(net, 200, activation=tf.nn.relu6,
+            net = tf.layers.dense(net, 20, activation=tf.nn.relu,
                                   kernel_initializer=init_w, bias_initializer=init_b, name='l2',
-                                  trainable=trainable)
-            net = tf.layers.dense(net, 10, activation=tf.nn.relu,
-                                  kernel_initializer=init_w, bias_initializer=init_b, name='l3',
                                   trainable=trainable)
             with tf.variable_scope('q'):
                 q = tf.layers.dense(net, 1, kernel_initializer=init_w, bias_initializer=init_b, trainable=trainable)   # Q(s,a)
@@ -202,7 +195,7 @@ actor.add_grad_to_graph(critic.a_grads)
 M = Memory(MEMORY_CAPACITY, dims=2 * STATE_DIM + ACTION_DIM + 1)
 
 saver = tf.train.Saver()
-path = './'+MODE[n_model]
+path = './discrete' if DISCRETE_ACTION else './continuous'
 
 if LOAD:
     saver.restore(sess, tf.train.latest_checkpoint(path))
@@ -212,10 +205,9 @@ else:
 
 def train():
     var = 2.  # control exploration
-
     for ep in range(MAX_EPISODES):
         s = env.reset()
-        ep_reward = 0
+        ep_step = 0
 
         for t in range(MAX_EP_STEPS):
         # while True:
@@ -229,7 +221,7 @@ def train():
             M.store_transition(s, a, r, s_)
 
             if M.pointer > MEMORY_CAPACITY:
-                var = max([var*.9999, VAR_MIN])    # decay the action randomness
+                var = max([var*.9995, VAR_MIN])    # decay the action randomness
                 b_M = M.sample(BATCH_SIZE)
                 b_s = b_M[:, :STATE_DIM]
                 b_a = b_M[:, STATE_DIM: STATE_DIM + ACTION_DIM]
@@ -240,34 +232,34 @@ def train():
                 actor.learn(b_s)
 
             s = s_
-            ep_reward += r
+            ep_step += 1
 
-            if t == MAX_EP_STEPS-1 or done:
+            if done or t == MAX_EP_STEPS - 1:
             # if done:
-                result = '| done' if done else '| ----'
                 print('Ep:', ep,
-                      result,
-                      '| R: %i' % int(ep_reward),
+                      '| Steps: %i' % int(ep_step),
                       '| Explore: %.2f' % var,
                       )
                 break
 
     if os.path.isdir(path): shutil.rmtree(path)
     os.mkdir(path)
-    ckpt_path = os.path.join('./'+MODE[n_model], 'DDPG.ckpt')
+    ckpt_path = os.path.join(path, 'DDPG.ckpt')
     save_path = saver.save(sess, ckpt_path, write_meta_graph=False)
     print("\nSave Model %s\n" % save_path)
 
 
 def eval():
     env.set_fps(30)
-    s = env.reset()
     while True:
-        if RENDER:
+        s = env.reset()
+        while True:
             env.render()
-        a = actor.choose_action(s)
-        s_, r, done = env.step(a)
-        s = s_
+            a = actor.choose_action(s)
+            s_, r, done = env.step(a)
+            s = s_
+            if done:
+                break
 
 if __name__ == '__main__':
     if LOAD:
