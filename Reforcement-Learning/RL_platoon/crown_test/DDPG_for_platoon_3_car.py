@@ -1,15 +1,6 @@
 """
-Environment is a Robot Arm. The arm tries to get to the blue point.
-The environment will return a geographic (distance) information for the arm to learn.
+Platoon following Codes, Controlled by Deep Deterministic Policy Gradient method.
 
-The far away from blue point the less reward; touch blue r+=1; stop at blue for a while then get r=+10.
-
-You can train this RL by using LOAD = False, after training, this model will be store in the a local folder.
-Using LOAD = True to reload the trained model for playing.
-
-You can customize this script in a way you want.
-
-View more on [莫烦Python] : https://morvanzhou.github.io/tutorials/
 
 Requirement:
 pyglet >= 1.2.4
