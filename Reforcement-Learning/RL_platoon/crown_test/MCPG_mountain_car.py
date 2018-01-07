@@ -45,20 +45,20 @@ def MCPG(learning_param):
     """
     MC policy gradient method for mountain-car test
     """
-    num_output = learning_param.num_update_max / learning_param.sample_interval + 1
-    theta = np.zeros(domain.num_policy_param, 1)
-    performance_list = np.zeros(learning_param.num_trial, num_output)
+    num_output = round(learning_param.num_update_max / learning_param.sample_interval + 1)
+    theta = np.zeros((domain.num_policy_param, 1))
+    performance_list = np.zeros((learning_param.num_trial, num_output))
     for trail_th in range(learning_param.num_trial):
         # TODO: 打印测试的结果
         alpha = learning_param.alpha_init
         for update_th in range(learning_param.num_update_max):
             if update_th % learning_param.sample_interval == 0:
                 print('==== Trail:' + str(trail_th) + ', update:' + str(update_th) + ' ====')
-            delta = np.zeros(domain.num_policy_param, 1)
+            delta = np.zeros((domain.num_policy_param, 1))
             T = 0
             if (update_th - 1) % learning_param.sample_interval == 0:  # 开始评估
                 # TODO: 记录测试的时间
-                eval_point = round(update_th / learning_param) + 1
+                eval_point = round(update_th / learning_param.sample_interval) + 1
                 performance_list[trail_th, eval_point] = eval_performance(theta,
                                                                           learning_param)  # evaluate average steps
                 # TODO: 打印测评估结果
@@ -66,7 +66,7 @@ def MCPG(learning_param):
             ###### update PG parameters after M episodes
             for ep_th in range(learning_param.num_episode):
                 t = 0
-                score_path_sum = np.zeros(domain.num_policy_param, 1)
+                score_path_sum = np.zeros((domain.num_policy_param, 1))
                 state = domain.random_reset()
                 done = False
                 a, scr = domain.cal_score(theta, state)
