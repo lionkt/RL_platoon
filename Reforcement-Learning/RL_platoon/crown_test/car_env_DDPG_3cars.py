@@ -12,10 +12,10 @@ ROAD_LENGTH = MAX_V * TIME_TAG_UP_BOUND
 CAR_LENGTH = 5
 LANE_WIDTH = 3.5
 AI_DT = 0.2  # 信息决策的步长
-UPDATA_TIME_PER_DIDA = 0.03  # 在c++版本的仿真平台的3D工程中，取的时间步长是0.03
+UPDATE_TIME_PER_DIDA = 0.03  # 在c++版本的仿真平台的3D工程中，取的时间步长是0.03
 
 START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 1.4
-EQUAL_TO_ZERO_SPEEED = 0.2
+EQUAL_TO_ZERO_SPEED = 0.2
 
 DES_PLATOON_INTER_DISTANCE = 5  # 车队的理想间距
 ROLE_SPACE = ['leader', 'follower']
@@ -244,7 +244,7 @@ class car(object):
                 if self.location[1] >= START_LEADER_TEST_DISTANCE:
                     if self.start_test == False:
                         self.start_test = True
-                    if self.speed > EQUAL_TO_ZERO_SPEEED:
+                    if self.speed > EQUAL_TO_ZERO_SPEED:
                         self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.8)
                     else:
                         self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.9)
@@ -397,8 +397,8 @@ def step_next(Carlist, time_tag, action):
     turns = 0
     done = False
     while turns <= AI_DT:
-        CarList_update_info_core(Carlist, UPDATA_TIME_PER_DIDA)
-        turns += UPDATA_TIME_PER_DIDA
+        CarList_update_info_core(Carlist, UPDATE_TIME_PER_DIDA)
+        turns += UPDATE_TIME_PER_DIDA
 
     # 设计终止条件
     # 1.时间到头了
