@@ -4,18 +4,18 @@ import numpy as np
 import Param_class as param_class
 
 #### state space
-POS_RANGE = np.array([-1.2, 0.6])
+POS_RANGE = np.array([-1.2, 0.5])
 VEL_RANGE = np.array([-0.07, 0.07])
 GOAL = 0.5  # mountain-car中flag所在的位置
-POS_MAP_RANGE = np.array([0, 1])
-VEL_MAP_RANGE = np.array([0, 1])
+POS_MAP_RANGE = np.array([0, 1],dtype=float)
+VEL_MAP_RANGE = np.array([0, 1],dtype=float)
 GRID_SIZE = np.array([4, 4])
 NUM_STATE_FEATURES = GRID_SIZE[0] * GRID_SIZE[1]
 
-c_map_pos = np.mat([[POS_RANGE[0], 1], [POS_RANGE[1], 1]])
-c_map_pos = c_map_pos.I * np.mat(POS_RANGE).transpose()
-c_map_vel = np.mat([[VEL_RANGE[0], 1], [VEL_RANGE[1], 1]])
-c_map_vel = c_map_vel.I * np.mat(VEL_RANGE).transpose()
+c_map_pos = np.mat([[POS_RANGE[0], 1], [POS_RANGE[1], 1]],dtype=float)
+c_map_pos = c_map_pos.I * np.mat(POS_MAP_RANGE).transpose()
+c_map_vel = np.mat([[VEL_RANGE[0], 1], [VEL_RANGE[1], 1]],dtype=float)
+c_map_vel = c_map_vel.I * np.mat(VEL_MAP_RANGE).transpose()
 c_map_pos = c_map_pos.getA1()
 c_map_vel = c_map_vel.getA1()
 GRID_STEP = np.array(
@@ -34,8 +34,8 @@ INV_SIG_GRID = np.mat(SIG_GRID).I
 phi_x = np.zeros((NUM_STATE_FEATURES, 1))
 
 #### action space
-NUM_ACT = 3
-ACT = np.array([0, 1, 2])  # 0-push left, 1-no push, 2-push right
+NUM_ACT = 2
+ACT = np.array([-1, 1])  # -1-push left, 1-push right
 num_policy_param = NUM_STATE_FEATURES * NUM_ACT
 
 
@@ -45,10 +45,10 @@ def random_reset():
     """
     rnd1 = random.uniform(0, 1)
     rnd2 = random.uniform(0, 1)
-    x = np.array(
-        [((-0.6) - (-0.4)) * rnd1 + (-0.4), 0])  # set according to https://github.com/openai/gym/wiki/MountainCar-v0
     # x = np.array(
-    #     [(POS_RANGE[1] - POS_RANGE[0]) * rnd1 + POS_RANGE[0], (VEL_RANGE[1] - VEL_RANGE[0]) * rnd2 + VEL_RANGE[0]])
+    #     [((-0.6) - (-0.4)) * rnd1 + (-0.4), 0])  # set according to https://github.com/openai/gym/wiki/MountainCar-v0
+    x = np.array(
+        [(POS_RANGE[1] - POS_RANGE[0]) * rnd1 + POS_RANGE[0], (VEL_RANGE[1] - VEL_RANGE[0]) * rnd2 + VEL_RANGE[0]])
     y = np.array([c_map_pos[0] * x[0] + c_map_pos[1], c_map_vel[0] * x[1] + c_map_vel[1]])
     isgoal = 0
     state = param_class.state(x=x, y=y, isgoal=isgoal)
@@ -69,26 +69,21 @@ def cal_score(theta, state):
     for th_ in range(NUM_ACT):  # 0-push left, 1-no push, 2-push right
         zero_mat = np.zeros((NUM_STATE_FEATURES, 1))
         if th_ == 0:
-            phi_xa = np.vstack((phi_x, zero_mat, zero_mat))
-        elif th_ == 1:
-            phi_xa = np.vstack((zero_mat, phi_x, zero_mat))
+            phi_xa = np.vstack((phi_x, zero_mat))
         else:
-            phi_xa = np.vstack((zero_mat, zero_mat, phi_x))
+            phi_xa = np.vstack((zero_mat, phi_x))
         mu[th_] = math.exp(np.dot(phi_xa.transpose(), theta))
     mu = mu / mu.sum(axis=0)  # 对PG概率归一化
     ## sample from probability
     temp = random.uniform(0, 1)
     if temp <= mu[0]:
         a = ACT[0]
-        scr = np.vstack((phi_x * (1 - mu[0]), -phi_x * mu[1], -phi_x * mu[2]))
-    elif temp <= mu[1]:
-        a = ACT[1]
-        scr = np.vstack((-phi_x * mu[0], phi_x * (1 - mu[1]), -phi_x * mu[2]))
+        scr = np.vstack((phi_x * (1 - mu[0]), -phi_x * mu[1]))
     else:
-        a = ACT[2]
-        scr = np.vstack((-phi_x * mu[0], -phi_x * mu[1], phi_x * (1 - mu[2])))
+        a = ACT[1]
+        scr = np.vstack((-phi_x * mu[0], phi_x * (1 - mu[1])))
     ## return
-    return a, scr
+    return a, scr, mu
 
 
 def cal_reward(state):
@@ -97,11 +92,13 @@ def cal_reward(state):
     return reward
 
 
-def judge_done(state):
+def judge_done(state, done):
     if state.x[0] >= GOAL:
         state.isgoal = 1
+        done = True
     else:
         state.isgoal = 0
+        done = False
 
 
 def convert_obs_to_state(state, observation, done):

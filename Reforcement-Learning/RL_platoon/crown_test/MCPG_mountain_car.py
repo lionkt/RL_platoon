@@ -2,6 +2,7 @@ import gym
 import numpy as np
 import Param_class as parm_class
 import Domain_func as domain
+import mountain_car_env as mountain_car_env
 
 # from RL_brain import DeepQNetwork
 
@@ -12,10 +13,6 @@ print(env.action_space)
 print(env.observation_space)
 print(env.observation_space.high)
 print(env.observation_space.low)
-
-# RL = DeepQNetwork(n_actions=3, n_features=2, learning_rate=0.001, e_greedy=0.9,
-#                   replace_target_iter=300, memory_size=3000,
-#                   e_greedy_increment=0.0001,)
 
 total_steps = 0
 
@@ -29,11 +26,13 @@ def eval_performance(theta, learning_param):
         t = 0
         done = False
         state = domain.random_reset()
-        a, scr = domain.cal_score(theta=theta, state=state)
+        a, scr, mu_eval = domain.cal_score(theta=theta, state=state)
         while not done and t < learning_param.episode_len_max:
-            observation_, reward, done, info = env.step(a)
-            domain.convert_obs_to_state(state=state, observation=observation_, done=done)  # python的参数传递的是引用
-            a, scr = domain.cal_score(theta=theta, state=state)
+            # observation_, reward, done, info = env.step(a)
+            mountain_car_env.step_next(state=state, a_old=a)
+            domain.judge_done(state=state, done=done)
+            # domain.convert_obs_to_state(state=state, observation=observation_, done=done)  # python的参数传递的是引用
+            a, scr, mu_eval = domain.cal_score(theta=theta, state=state)
             t += 1
         # sum among different episodes
         step_avg = step_avg + t
@@ -58,7 +57,7 @@ def MCPG(learning_param):
             T = 0
             if update_th % learning_param.sample_interval == 0:  # 开始评估
                 # TODO: 记录测试的时间
-                eval_point = round(update_th / learning_param.sample_interval) + 1
+                eval_point = round(update_th / learning_param.sample_interval)
                 performance_list[trail_th, eval_point] = eval_performance(theta,
                                                                           learning_param)  # evaluate average steps
                 # TODO: 打印测评估结果
@@ -69,12 +68,15 @@ def MCPG(learning_param):
                 score_path_sum = np.zeros((domain.num_policy_param, 1))
                 state = domain.random_reset()
                 done = False
-                a, scr = domain.cal_score(theta, state)
+                a, scr, mu = domain.cal_score(theta, state)
                 while not done and t < learning_param.episode_len_max:
-                    observation_, reward, done, info = env.step(a)
-                    domain.convert_obs_to_state(state=state, observation=observation_, done=done)  # python的参数传递的是引用
-                    a, scr = domain.cal_score(theta=theta, state=state)
+                    # observation_, reward, done, info = env.step(a)
+                    mountain_car_env.step_next(state=state, a_old=a)
+                    domain.judge_done(state=state, done=done)
+                    # domain.convert_obs_to_state(state=state, observation=observation_, done=done)  # python的参数传递的是引用
+                    a, scr, mu = domain.cal_score(theta=theta, state=state)
                     score_path_sum = score_path_sum + scr
+                    reward = domain.cal_reward(state=state)
                     delta = delta + reward * score_path_sum  # update delta for gradient calculation
                     t += 1
                 T = T + t
@@ -87,7 +89,7 @@ def MCPG(learning_param):
 
 if __name__ == '__main__':
     learning_params = parm_class.learning_param(num_update_max=500, sample_interval=10, num_trial=1, gamma=0.95,
-                                                num_episode=5, episode_len_max=200, num_episode_eval=10,
+                                                num_episode=10, episode_len_max=200, num_episode_eval=10,
                                                 alpha_init=0.025)
     # begin train and evaluation
     MCPG(learning_param=learning_params)
