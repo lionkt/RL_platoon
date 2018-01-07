@@ -97,6 +97,13 @@ def cal_reward(state):
     return reward
 
 
+def judge_done(state):
+    if state.x[0] >= GOAL:
+        state.isgoal = 1
+    else:
+        state.isgoal = 0
+
+
 def convert_obs_to_state(state, observation, done):
     state.x[0] = observation[0]
     state.x[1] = observation[1]
