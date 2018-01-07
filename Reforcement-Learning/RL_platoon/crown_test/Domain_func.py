@@ -46,7 +46,9 @@ def random_reset():
     rnd1 = random.uniform(0, 1)
     rnd2 = random.uniform(0, 1)
     x = np.array(
-        [(POS_RANGE[1] - POS_RANGE[0]) * rnd1 + POS_RANGE[0], (VEL_RANGE[1] - VEL_RANGE[0]) * rnd2 + VEL_RANGE[0]])
+        [((-0.6) - (-0.4)) * rnd1 + (-0.4), 0])  # set according to https://github.com/openai/gym/wiki/MountainCar-v0
+    # x = np.array(
+    #     [(POS_RANGE[1] - POS_RANGE[0]) * rnd1 + POS_RANGE[0], (VEL_RANGE[1] - VEL_RANGE[0]) * rnd2 + VEL_RANGE[0]])
     y = np.array([c_map_pos[0] * x[0] + c_map_pos[1], c_map_vel[0] * x[1] + c_map_vel[1]])
     isgoal = 0
     state = param_class.state(x=x, y=y, isgoal=isgoal)
@@ -63,7 +65,7 @@ def cal_score(theta, state):
     phi_x = np.zeros((NUM_STATE_FEATURES, 1))
     for th_ in range(NUM_STATE_FEATURES):
         temp = np.mat(y - GRID_CENTERS[:, th_])
-        phi_x[th_] = math.exp(-0.5 * np.dot(np.dot(temp,INV_SIG_GRID),temp.transpose()))
+        phi_x[th_] = math.exp(-0.5 * np.dot(np.dot(temp, INV_SIG_GRID), temp.transpose()))
     for th_ in range(NUM_ACT):  # 0-push left, 1-no push, 2-push right
         zero_mat = np.zeros((NUM_STATE_FEATURES, 1))
         if th_ == 0:
@@ -73,6 +75,7 @@ def cal_score(theta, state):
         else:
             phi_xa = np.vstack((zero_mat, zero_mat, phi_x))
         mu[th_] = math.exp(np.dot(phi_xa.transpose(), theta))
+    mu = mu / mu.sum(axis=0)  # 对PG概率归一化
     ## sample from probability
     temp = random.uniform(0, 1)
     if temp <= mu[0]:

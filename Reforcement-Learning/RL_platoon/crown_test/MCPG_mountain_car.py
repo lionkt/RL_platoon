@@ -56,7 +56,7 @@ def MCPG(learning_param):
                 print('==== Trail:' + str(trail_th) + ', update:' + str(update_th) + ' ====')
             delta = np.zeros((domain.num_policy_param, 1))
             T = 0
-            if (update_th - 1) % learning_param.sample_interval == 0:  # 开始评估
+            if update_th % learning_param.sample_interval == 0:  # 开始评估
                 # TODO: 记录测试的时间
                 eval_point = round(update_th / learning_param.sample_interval) + 1
                 performance_list[trail_th, eval_point] = eval_performance(theta,
@@ -86,7 +86,7 @@ def MCPG(learning_param):
 
 
 if __name__ == '__main__':
-    learning_params = parm_class.learning_param(num_update_max=500, sample_interval=50, num_trial=1, gamma=0.95,
+    learning_params = parm_class.learning_param(num_update_max=500, sample_interval=10, num_trial=1, gamma=0.95,
                                                 num_episode=5, episode_len_max=200, num_episode_eval=10,
                                                 alpha_init=0.025)
     # begin train and evaluation
