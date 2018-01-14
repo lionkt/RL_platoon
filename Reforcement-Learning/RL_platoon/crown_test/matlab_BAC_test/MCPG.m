@@ -7,11 +7,11 @@ output_num = floor(learning_param.max_update_num / learning_param.eval_interval)
 mean_step_list = zeros(output_num, 1);
 calc_time_list = zeros(output_num, 1);
 
-% begin calculation
+%% begin calculation
 tic;
 for update_th = 1:learning_param.max_update_num
     if mod(update_th, learning_param.eval_interval)==0
-        disp(['finish ',num2str(update_th/learning_param.max_update_num*100),'% of ',num2str(learning_param.max_update_num)]);
+        disp(['MCPG finish ',num2str(update_th/learning_param.max_update_num*100),'% of ',num2str(learning_param.max_update_num)]);
     end
     total_step = 0;
     delta = zeros(env_param.policy_param_num,1);    % update value for theta
@@ -31,6 +31,7 @@ for update_th = 1:learning_param.max_update_num
     
     %%% calculate delta
     for episode_th = 1:learning_param.train_episode_num
+        % init params
         t = 0;
         score_path_sum = zeros(env_param.policy_param_num,1);
         state = reset_state(env_param);
