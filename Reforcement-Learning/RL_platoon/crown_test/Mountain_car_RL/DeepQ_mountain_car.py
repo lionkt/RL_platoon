@@ -1,6 +1,9 @@
-import gym
 import os
-from RL_brain import DeepQNetwork
+
+import gym
+
+from Mountain_car_RL.DeepQNetwork import DeepQNetwork
+import Mountain_car_RL.mountain_car_env as mountain_car_env
 
 env = gym.make('MountainCar-v0')
 env = env.unwrapped
@@ -23,6 +26,8 @@ total_steps = 0
 
 
 for i_episode in range(MAX_train_episode):
+    if i_episode%20 == 0:
+        print('=== Now finish',str(i_episode/MAX_train_episode*100),'% of ', str(MAX_train_episode) ,'eps')
 
     observation = env.reset()
     ep_r = 0
@@ -32,12 +37,14 @@ for i_episode in range(MAX_train_episode):
 
         action = RL.choose_action(observation)
 
+        # observation_, reward, done, info = env.step(action)
         observation_, reward, done, info = env.step(action)
+
 
         position, velocity = observation_
 
         # 车开得越高 reward 越大
-        # reward = abs(position - (-0.5))
+        reward = abs(position - (-0.5))
 
         RL.store_transition(observation, action, reward, observation_)
 
@@ -55,8 +62,8 @@ for i_episode in range(MAX_train_episode):
                   '| Ep_step: ', str(ep_step))
             break
 
-        if ep_step > 300:
-            break
+        # if ep_step > 300:
+        #     break
 
         observation = observation_
         total_steps += 1

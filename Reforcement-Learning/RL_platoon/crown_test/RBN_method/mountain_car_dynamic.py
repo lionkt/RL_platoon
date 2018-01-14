@@ -1,7 +1,7 @@
 import math
 import numpy as np
-import Param_class as param_class
-import Domain_func as domain
+
+from RBN_method import Domain_func as domain
 
 
 def step_next(state, a_old):

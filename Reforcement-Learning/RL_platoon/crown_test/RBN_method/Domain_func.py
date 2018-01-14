@@ -1,7 +1,7 @@
-import math
 import random
+
+import math
 import numpy as np
-import Param_class as param_class
 
 #### state space
 POS_RANGE = np.array([-1.2, 0.5])
@@ -51,7 +51,7 @@ def random_reset():
         [(POS_RANGE[1] - POS_RANGE[0]) * rnd1 + POS_RANGE[0], (VEL_RANGE[1] - VEL_RANGE[0]) * rnd2 + VEL_RANGE[0]])
     y = np.array([c_map_pos[0] * x[0] + c_map_pos[1], c_map_vel[0] * x[1] + c_map_vel[1]])
     isgoal = 0
-    state = param_class.state(x=x, y=y, isgoal=isgoal)
+    state = Param_class.state(x=x, y=y, isgoal=isgoal)
     return state
 
 

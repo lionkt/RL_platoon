@@ -1,8 +1,8 @@
 import gym
+import RBN_method.mountain_car_dynamic as mountain_car_dynamic
 import numpy as np
-import Param_class as parm_class
-import Domain_func as domain
-import mountain_car_dynamic as mountain_car_dynamic
+
+from RBN_method import Domain_func as domain, Param_class as parm_class
 
 # from RL_brain import DeepQNetwork
 
