@@ -20,29 +20,23 @@ def random_reset():
     """
     rnd1 = random.uniform(0, 1)
     rnd2 = random.uniform(0, 1)
+    pos1 = -0.6
+    pos2 = -0.4
+    vel1 = -0.02
+    vel2 = 0.02
     # x = np.array(
     #     [((-0.6) - (-0.4)) * rnd1 + (-0.4), 0])  # set according to https://github.com/openai/gym/wiki/MountainCar-v0
-    x = np.array(
-        [(POS_RANGE[1] - POS_RANGE[0]) * rnd1 + POS_RANGE[0], (VEL_RANGE[1] - VEL_RANGE[0]) * rnd2 + VEL_RANGE[0]])
+    x = np.array([(pos2 - pos1) * rnd1 + pos1, (vel2 - vel1) * rnd2 + vel1])
     observation = x
     return observation
 
 
 
 def cal_reward(obs):
-    reward = np.abs(obs[1]-(-0.5))  # 距离开始的地方越远，奖励越多
-    # reward = obs.isgoal - 1
+    reward = np.abs(obs[0]-(-0.5))  # 距离开始的地方越远，奖励越多
+    # reward = 0 if obs[0] >= GOAL else -1
     return reward
 
-
-# def judge_done(state):
-#     if state.x[0] >= GOAL:
-#         state.isgoal = 1
-#         done = True
-#     else:
-#         state.isgoal = 0
-#         done = False
-#     return done
 
 def step_next(obs_old, a_old):
     """
