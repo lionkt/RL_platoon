@@ -10,7 +10,7 @@ print(env.observation_space)
 print(env.observation_space.high)
 print(env.observation_space.low)
 
-MAX_train_episode = 100
+MAX_train_episode = 200
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
@@ -37,7 +37,7 @@ for i_episode in range(MAX_train_episode):
         position, velocity = observation_
 
         # 车开得越高 reward 越大
-        reward = abs(position - (-0.5))
+        # reward = abs(position - (-0.5))
 
         RL.store_transition(observation, action, reward, observation_)
 
@@ -55,7 +55,10 @@ for i_episode in range(MAX_train_episode):
                   '| Ep_step: ', str(ep_step))
             break
 
+        if ep_step > 300:
+            break
+
         observation = observation_
         total_steps += 1
 
-RL.plot_cost()
+# RL.plot_cost()

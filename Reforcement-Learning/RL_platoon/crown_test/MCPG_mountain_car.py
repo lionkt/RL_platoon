@@ -2,7 +2,7 @@ import gym
 import numpy as np
 import Param_class as parm_class
 import Domain_func as domain
-import mountain_car_env as mountain_car_env
+import mountain_car_dynamic as mountain_car_dynamic
 
 # from RL_brain import DeepQNetwork
 
@@ -29,7 +29,7 @@ def eval_performance(theta, learning_param):
         a, scr, mu_eval = domain.cal_score(theta=theta, state=state)
         while not done and t < learning_param.episode_len_max:
             # observation_, reward, done, info = env.step(a)
-            mountain_car_env.step_next(state=state, a_old=a)
+            mountain_car_dynamic.step_next(state=state, a_old=a)
             domain.judge_done(state=state, done=done)
             # domain.convert_obs_to_state(state=state, observation=observation_, done=done)  # python的参数传递的是引用
             a, scr, mu_eval = domain.cal_score(theta=theta, state=state)
@@ -71,7 +71,7 @@ def MCPG(learning_param):
                 a, scr, mu = domain.cal_score(theta, state)
                 while not done and t < learning_param.episode_len_max:
                     # observation_, reward, done, info = env.step(a)
-                    mountain_car_env.step_next(state=state, a_old=a)
+                    mountain_car_dynamic.step_next(state=state, a_old=a)
                     domain.judge_done(state=state, done=done)
                     # domain.convert_obs_to_state(state=state, observation=observation_, done=done)  # python的参数传递的是引用
                     a, scr, mu = domain.cal_score(theta=theta, state=state)
