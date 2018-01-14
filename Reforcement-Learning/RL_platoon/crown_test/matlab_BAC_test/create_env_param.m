@@ -35,8 +35,8 @@ env_param.sig_grid_network = env_param.sig_grid2 * eye(2);
 env_param.inv_sig_grid_network = inv(env_param.sig_grid_network);
 
 env_param.act_num = 2;  % action space dim
-env_param.act = [-1; 1];    % action
-env_param.num_policy_param = env_param.state_feature_num * env_param.act_num;
+env_param.action = [-1; 1];    % action
+env_param.policy_param_num = env_param.state_feature_num * env_param.act_num;   
 
 
 end
