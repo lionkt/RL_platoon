@@ -26,7 +26,10 @@ env_param = create_env_param();
 
 
 %% plot output
-
+figure;
+plot(mean_step_list,'linewidth',1.5)
+title('mean step in Mountain-Car');
+xlabel('iter times');
 
 
 

@@ -3,11 +3,12 @@ function [ mean_step_list, calc_time_list, theta ] = MCPG( learning_param, env_p
 % init
 alpha = learning_param.alpha_init;
 theta = zeros(env_param.policy_param_num,1);
-output_num = floor(learning_param.max_update_num / learning_param.eval_interval);
+output_num = floor(learning_param.max_update_num / learning_param.eval_interval) + 1;
 mean_step_list = zeros(output_num, 1);
 calc_time_list = zeros(output_num, 1);
 
 % begin calculation
+tic;
 for update_th = 1:learning_param.max_update_num
     if mod(update_th, learning_param.eval_interval)==0
         disp(['finish ',num2str(update_th/learning_param.max_update_num*100),'% of ',num2str(learning_param.max_update_num)]);
@@ -16,9 +17,16 @@ for update_th = 1:learning_param.max_update_num
     delta = zeros(env_param.policy_param_num,1);    % update value for theta
     
     %%% begin evaluate
-    if mod(update_th, learning_param.eval_interval)==0
-        eval_ix = update_th/learning_param.eval_interval;
+    if update_th==1
+        toc;
+        eval_ix = 1;
         mean_step_list(eval_ix) = evaluate(learning_param,env_param,theta);        
+        tic;
+    elseif mod(update_th, learning_param.eval_interval)==0
+        toc;
+        eval_ix = update_th/learning_param.eval_interval + 1;
+        mean_step_list(eval_ix) = evaluate(learning_param,env_param,theta);        
+        tic;
     end
     
     %%% calculate delta
@@ -41,7 +49,7 @@ for update_th = 1:learning_param.max_update_num
     end
     %%% update theta
     grad = delta;
-    theta = theta + alpha*grad;
+    theta = theta - alpha*grad;
        
 end
 

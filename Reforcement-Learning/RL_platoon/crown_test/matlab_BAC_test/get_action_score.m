@@ -12,10 +12,11 @@ end
 
 %% calculate action probability
 for th_ = 1:env_param.act_num
+    zero_mat = zeros(env_param.state_feature_num,1);
     if (th_ == 1)
-        phi_xa = [phi_x; zeros(env_param.state_feature_num,1);];    
+        phi_xa = [phi_x; zero_mat];    
     else
-        phi_xa = [zeros(env_param.state_feature_num,1); phi_x];
+        phi_xa = [zero_mat; phi_x];
     end
     mu(th_) = exp(phi_xa' * theta);
 end
