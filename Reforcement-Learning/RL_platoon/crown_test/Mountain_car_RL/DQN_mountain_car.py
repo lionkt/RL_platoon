@@ -12,7 +12,7 @@ import Mountain_car_RL.Evaluate_func as eval_module
 # print(env.observation_space.high)
 # print(env.observation_space.low)
 
-MAX_train_episode = 400
+MAX_train_episode = 40
 MAX_episode_length = 300
 Eval_interval = 40
 Eval_episode = 100
@@ -28,13 +28,13 @@ avg_steps_list = []
 
 for i_episode in range(MAX_train_episode):
     if (i_episode + 1) % Eval_interval == 0:
-        print('=== Now finish %.3f', str((i_episode + 1) / MAX_train_episode * 100), '% of ', str(MAX_train_episode),
+        print('=== Now finish %.3f', (i_episode + 1) / MAX_train_episode * 100, '% of ', str(MAX_train_episode),
               'eps')
     # begin eval
     if (i_episode + 1) % Eval_interval == 0 or i_episode == 0:
-        avg_steps = eval_module.eval_mountain_car(RL=RL, eval_eps=Eval_episode, method=3)
+        avg_steps = eval_module.eval_mountain_car(RL=RL, eval_eps=Eval_episode, reset_method=3)
         avg_steps_list.append(avg_steps)
-        print('--- eval, avg steps: %.3f', str(avg_steps))
+        print('--- eval, avg steps: %.3f', avg_steps)
 
     # begin train
     observation = mountain_car_env.random_reset(method=3)
@@ -44,12 +44,9 @@ for i_episode in range(MAX_train_episode):
         # env.render()
 
         action = RL.choose_action(observation)
-
         # observation_, reward, done, info = env.step(action)
         observation_, done = mountain_car_env.step_next(observation, action)
-
         reward = mountain_car_env.cal_reward(observation_)  # 车开得越高 reward 越大
-
         RL.store_transition(observation, action, reward, observation_)
 
         if total_steps > 1000:
@@ -74,7 +71,7 @@ for i_episode in range(MAX_train_episode):
 
         # RL.plot_cost()
 
-root_path = './OutputImg/Mountain_car/'
+root_path = '../OutputImg/Mountain_car/'
 output_file_name = 'DQN' + '_MaxEp=' + str(MAX_train_episode) + '_MaxEpLen=' + str(MAX_episode_length) + '_AvgSteps.txt'
 write_buffer = np.array(avg_steps_list).transpose()
 np.savetxt(root_path + output_file_name, write_buffer)

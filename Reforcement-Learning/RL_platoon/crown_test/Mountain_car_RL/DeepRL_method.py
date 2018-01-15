@@ -1,8 +1,5 @@
 """
-
-Using:
 Tensorflow: 1.0
-gym: 0.8.0
 """
 
 import numpy as np
@@ -264,7 +261,8 @@ class PolicyGradient:
 
     def _discount_and_norm_rewards(self):
         # discount episode rewards
-        discounted_ep_rs = np.zeros_like(self.ep_rs)
+        # discounted_ep_rs = np.zeros_like(self.ep_rs)
+        discounted_ep_rs = np.zeros(np.size(self.ep_rs))
         running_add = 0
         for t in reversed(range(0, len(self.ep_rs))):
             running_add = running_add * self.gamma + self.ep_rs[t]

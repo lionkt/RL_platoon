@@ -10,6 +10,7 @@ GOAL = 0.5  # mountain-car中flag所在的位置
 
 #### action space
 NUM_ACT = 2
+NUM_FEATURE = 2
 ACT = np.array([-1, 1])  # -1-push left, 1-push right
 
 
@@ -24,12 +25,12 @@ def random_reset(method=None):
         pos2 = 0.0
         vel1 = -0.02
         vel2 = 0.02
-    elif method == 2:   # 接近gym的组合
+    elif method == 2:  # 接近gym的组合
         pos1 = -0.6
         pos2 = -0.4
         vel1 = -0.02
         vel2 = 0.02
-    elif method == 3:   # RBN中的组合
+    elif method == 3:  # RBN中的组合
         pos1 = POS_RANGE[0]
         pos2 = POS_RANGE[1]
         vel1 = VEL_RANGE[0]
@@ -42,9 +43,11 @@ def random_reset(method=None):
     return observation
 
 
-def cal_reward(obs):
-    reward = np.abs(obs[0] - (-0.5))  # 距离开始的地方越远，奖励越多
-    # reward = 0 if obs[0] >= GOAL else -1
+def cal_reward(obs, reward_function=None):
+    if not reward_function:
+        reward = np.abs(obs[0] - (-0.5))  # 距离开始的地方越远，奖励越多
+    elif reward_function == 'original':             # 原始的奖励方法
+        reward = -1
     return reward
 
 
