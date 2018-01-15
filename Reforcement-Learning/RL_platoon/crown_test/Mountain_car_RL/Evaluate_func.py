@@ -27,9 +27,7 @@ def eval_mountain_car(RL, eval_eps, reset_method=None, reward_function=None):
             ep_r += reward
             ep_step += 1
 
-            if ep_step > 300:
-                break
-            if done:
+            if ep_step > 300 or done:
                 break
 
             observation = observation_

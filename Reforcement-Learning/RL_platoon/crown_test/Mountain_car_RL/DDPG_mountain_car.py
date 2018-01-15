@@ -9,21 +9,27 @@ gym 0.8.0
 
 import tensorflow as tf
 import numpy as np
-import gym
+# import gym
+import Mountain_car_RL.mountain_car_env as mountain_car_env
+import Mountain_car_RL.Evaluate_func as eval_module
 
 #####################  hyper parameters  ####################
 
-MAX_EPISODES = 200
-MAX_EP_STEPS = 200
+MAX_train_episode = 500
+MAX_episode_length = 300
 LR_A = 0.001    # learning rate for actor
 LR_C = 0.002    # learning rate for critic
-GAMMA = 0.9     # reward discount
+GAMMA = 0.995     # reward discount
 TAU = 0.01      # soft replacement
 MEMORY_CAPACITY = 10000
 BATCH_SIZE = 32
 
+Eval_interval = 50
+Eval_episode = 100
+
 # ENV_NAME = 'Pendulum-v0'
-ENV_NAME = 'MountainCar-v0'
+# ENV_NAME = 'MountainCar-v0'
+ENV_NAME = 'MountainCarContinuous-v0'
 ###############################  DDPG  ####################################
 
 class DDPG(object):
@@ -39,13 +45,13 @@ class DDPG(object):
         self.R = tf.placeholder(tf.float32, [None, 1], 'r')
 
         with tf.variable_scope('Actor'):
-            self.a = self._build_a(self.S, scope='eval', trainable=True)
-            a_ = self._build_a(self.S_, scope='target', trainable=False)
+            self.a = self._build_actor(self.S, scope='eval', trainable=True)
+            a_ = self._build_actor(self.S_, scope='target', trainable=False)
         with tf.variable_scope('Critic'):
             # assign self.a = a in memory when calculating q for td_error,
             # otherwise the self.a is from Actor when updating Actor
-            q = self._build_c(self.S, self.a, scope='eval', trainable=True)
-            q_ = self._build_c(self.S_, a_, scope='target', trainable=False)
+            q = self._build_critic(self.S, self.a, scope='eval', trainable=True)
+            q_ = self._build_critic(self.S_, a_, scope='target', trainable=False)
 
         # networks parameters
         self.ae_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval')
@@ -68,7 +74,9 @@ class DDPG(object):
         self.sess.run(tf.global_variables_initializer())
 
     def choose_action(self, s):
-        return self.sess.run(self.a, {self.S: s[np.newaxis, :]})[0]
+        probs =  self.sess.run(self.a, {self.S: s[np.newaxis, :]})[0]
+        # act = np.random.choice(np.arange(probs.shape[1]), p=probs.ravel())
+        return probs
 
     def learn(self):
         # soft target replacement
@@ -90,13 +98,14 @@ class DDPG(object):
         self.memory[index, :] = transition
         self.pointer += 1
 
-    def _build_a(self, s, scope, trainable):
+    def _build_actor(self, s, scope, trainable):
         with tf.variable_scope(scope):
-            net = tf.layers.dense(s, 30, activation=tf.nn.relu, name='l1', trainable=trainable)
+            n_l1 = 30
+            net = tf.layers.dense(s, n_l1, activation=tf.nn.relu, name='l1', trainable=trainable)
             a = tf.layers.dense(net, self.a_dim, activation=tf.nn.tanh, name='a', trainable=trainable)
             return tf.multiply(a, self.a_bound, name='scaled_a')
 
-    def _build_c(self, s, a, scope, trainable):
+    def _build_critic(self, s, a, scope, trainable):
         with tf.variable_scope(scope):
             n_l1 = 30
             w1_s = tf.get_variable('w1_s', [self.s_dim, n_l1], trainable=trainable)
@@ -106,36 +115,64 @@ class DDPG(object):
             return tf.layers.dense(net, 1, trainable=trainable)  # Q(s,a)
 
 ###############################  training  ####################################
+if __name__ == '__main__':
+    # env = gym.make(ENV_NAME)
+    # env = env.unwrapped
+    # env.seed(1)
 
-env = gym.make(ENV_NAME)
-env = env.unwrapped
-env.seed(1)
+    s_dim = mountain_car_env.NUM_FEATURE# env.observation_space.shape[0]
+    # a_dim = env.action_space.n
+    a_dim = 1   #env.action_space.shape[0]
+    a_bound = mountain_car_env.ACT[1] # env.action_space.high
 
-s_dim = env.observation_space.shape[0]
-a_dim = env.action_space.shape[0]
-a_bound = env.action_space.high
+    ddpg = DDPG(a_dim, s_dim, a_bound)
 
-ddpg = DDPG(a_dim, s_dim, a_bound)
+    var = 5  # control exploration
+    total_steps = 0
+    avg_steps_list = []
+    # begin main function
+    for i_episode in range(MAX_train_episode):
+        if (i_episode + 1) % Eval_interval == 0:
+            print('=== Now finish %.3f' % ((i_episode + 1) / MAX_train_episode * 100), '% of ', str(MAX_train_episode),
+                  'eps')
 
-var = 3  # control exploration
-for i in range(MAX_EPISODES):
-    s = env.reset()
-    ep_reward = 0
-    for j in range(MAX_EP_STEPS):
+        # begin eval
+        if (i_episode + 1) % Eval_interval == 0 or i_episode == 0:
+            avg_steps = eval_module.eval_mountain_car(RL=ddpg, eval_eps=Eval_episode, reset_method=3,
+                                                      reward_function=None)
+            avg_steps_list.append(avg_steps)
+            print('------ eval, avg steps: %.1f' % (avg_steps))
 
-        # Add exploration noise
-        a = ddpg.choose_action(s)
-        a = np.clip(np.random.normal(a, var), -2, 2)    # add randomness to action selection for exploration
-        s_, r, done, info = env.step(a)
 
-        ddpg.store_transition(s, a, r / 10, s_)
+        # s = env.reset()
+        s = mountain_car_env.random_reset(method=3)
+        ep_reward = 0
+        ep_step = 0
+        while True:
 
-        if ddpg.pointer > MEMORY_CAPACITY:
-            var *= .9995    # decay the action randomness
-            ddpg.learn()
+            # Add exploration noise
+            a = ddpg.choose_action(s)
+            a = np.clip(np.random.normal(a, var), -2, 2)    # add randomness to action selection for exploration
 
-        s = s_
-        ep_reward += r
-        if j == MAX_EP_STEPS-1:
-            print('Episode:', i, ' Reward: %i' % int(ep_reward), 'Explore: %.2f' % var, )
-            break
+            # s_, r, done, info = env.step(a)
+            s_, done = mountain_car_env.step_next(s, a)
+            r = mountain_car_env.cal_reward(s_, reward_function=None)
+
+            ddpg.store_transition(s, a, r, s_)
+
+            if ddpg.pointer > MEMORY_CAPACITY:
+                var *= .9995    # decay the action randomness
+                ddpg.learn()
+
+            s = s_
+            ep_reward += r
+            ep_step += 1
+            if done or ep_step >= MAX_episode_length:
+                break
+
+    # output performance to file
+    root_path = '../OutputImg/Mountain_car/'
+    output_file_name = 'DDPG' + '_MaxEp=' + str(MAX_train_episode) + '_MaxEpLen=' + str(
+        MAX_episode_length) + '_AvgSteps.txt'
+    write_buffer = np.array(avg_steps_list).transpose()
+    np.savetxt(root_path + output_file_name, write_buffer)

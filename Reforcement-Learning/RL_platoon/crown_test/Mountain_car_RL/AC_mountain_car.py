@@ -145,7 +145,7 @@ if __name__ == '__main__':
         # begin eval
         if (i_episode + 1) % Eval_interval == 0 or i_episode == 0:
             avg_steps = eval_module.eval_mountain_car(RL=actor, eval_eps=Eval_episode, reset_method=3,
-                                                      reward_function='original')
+                                                      reward_function=None)
             avg_steps_list.append(avg_steps)
             print('------ eval, avg steps: %.1f' %(avg_steps))
 
@@ -172,14 +172,6 @@ if __name__ == '__main__':
             total_steps += 1
 
             if done or ep_step >= MAX_episode_length:
-                ep_rs_sum = sum(track_r)
-
-                # if 'running_reward' not in globals():
-                #     running_reward = ep_rs_sum
-                # else:
-                #     running_reward = running_reward * 0.95 + ep_rs_sum * 0.01
-                # print("episode:", i_episode, "  reward:", int(running_reward))
-
                 break
 
     root_path = '../OutputImg/Mountain_car/'

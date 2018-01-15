@@ -55,7 +55,7 @@ if __name__ == '__main__':
 
     for i_episode in range(MAX_train_episode):
         if (i_episode + 1) % Eval_interval == 0:
-            print('=== Now finish' %((i_episode + 1) / MAX_train_episode * 100), '% of ', str(MAX_train_episode), 'eps')
+            print('=== Now finish %.2f' %((i_episode + 1) / MAX_train_episode * 100), '% of ', str(MAX_train_episode), 'eps')
 
         # begin eval
         if (i_episode + 1) % Eval_interval == 0 or i_episode == 0:
