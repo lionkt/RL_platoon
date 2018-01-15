@@ -5,9 +5,11 @@ Using:
 tensorflow 1.0
 gym 0.8.0
 """
-import gym
+# import gym
 import numpy as np
 import tensorflow as tf
+import Mountain_car_RL.mountain_car_env as mountain_car_env
+import Mountain_car_RL.Evaluate_func as eval_module
 
 np.random.seed(2)
 tf.set_random_seed(2)  # reproducible
@@ -19,17 +21,16 @@ MAX_episode_length = 300
 Eval_interval = 50
 Eval_episode = 100
 
-GAMMA = 0.99     # reward discount in TD error
+GAMMA = 0.995     # reward discount in TD error
 LR_A = 0.001    # learning rate for actor
 LR_C = 0.01     # learning rate for critic
 
-# env = gym.make('CartPole-v0')
-env = gym.make('MountainCar-v0')
-env.seed(1)  # reproducible
-env = env.unwrapped
+# env = gym.make('MountainCar-v0')
+# env.seed(1)  # reproducible
+# env = env.unwrapped
 
-n_features = env.observation_space.shape[0]
-n_actions = env.action_space.n
+n_features = mountain_car_env.NUM_FEATURE # env.observation_space.shape[0]
+n_actions = mountain_car_env.NUM_ACT # env.action_space.n
 
 
 class Actor(object):
@@ -132,37 +133,56 @@ sess.run(tf.global_variables_initializer())
 if OUTPUT_GRAPH:
     tf.summary.FileWriter("logs/", sess.graph)
 
-for i_episode in range(MAX_train_episode):
 
-    if (i_episode + 1) % Eval_interval == 0:
-        print('=== Now finish %.3f', (i_episode + 1) / MAX_train_episode * 100, '% of ', str(MAX_train_episode), 'eps')
+if __name__ == '__main__':
+    total_steps = 0
+    avg_steps_list = []
+    # begin main function
+    for i_episode in range(MAX_train_episode):
+        if (i_episode + 1) % Eval_interval == 0:
+            print('=== Now finish %.3f' % ((i_episode + 1) / MAX_train_episode * 100), '% of ', str(MAX_train_episode), 'eps')
 
-    # begin eval
+        # begin eval
+        if (i_episode + 1) % Eval_interval == 0 or i_episode == 0:
+            avg_steps = eval_module.eval_mountain_car(RL=actor, eval_eps=Eval_episode, reset_method=3,
+                                                      reward_function='original')
+            avg_steps_list.append(avg_steps)
+            print('------ eval, avg steps: %.1f' %(avg_steps))
 
-    # begin train
-    s = env.reset()
-    ep_step = 0
-    track_r = []
-    while True:
+        # begin train
+        # s = env.reset()
+        s = mountain_car_env.random_reset(method=3)
+        ep_step = 0
+        track_r = []
+        while True:
 
-        a = actor.choose_action(s)
+            a = actor.choose_action(s)
 
-        s_, r, done, info = env.step(a)
+            s_, done = mountain_car_env.step_next(s, a)
+            r = mountain_car_env.cal_reward(s_, reward_function=None)
 
-        track_r.append(r)
+            track_r.append(r)
 
-        td_error = critic.learn(s, r, s_)  # gradient = grad[r + gamma * V(s_) - V(s)]
-        actor.learn(s, a, td_error)     # true_gradient = grad[logPi(s,a) * td_error]
+            td_error = critic.learn(s, r, s_)  # gradient = grad[r + gamma * V(s_) - V(s)]
+            if total_steps >= 1000:
+                actor.learn(s, a, td_error)     # true_gradient = grad[logPi(s,a) * td_error]
 
-        s = s_
-        ep_step += 1
+            s = s_
+            ep_step += 1
+            total_steps += 1
 
-        if done or ep_step >= MAX_episode_length:
-            ep_rs_sum = sum(track_r)
+            if done or ep_step >= MAX_episode_length:
+                ep_rs_sum = sum(track_r)
 
-            if 'running_reward' not in globals():
-                running_reward = ep_rs_sum
-            else:
-                running_reward = running_reward * 0.95 + ep_rs_sum * 0.01
-            print("episode:", i_episode, "  reward:", int(running_reward))
-            break
+                # if 'running_reward' not in globals():
+                #     running_reward = ep_rs_sum
+                # else:
+                #     running_reward = running_reward * 0.95 + ep_rs_sum * 0.01
+                # print("episode:", i_episode, "  reward:", int(running_reward))
+
+                break
+
+    root_path = '../OutputImg/Mountain_car/'
+    output_file_name = 'AC' + '_MaxEp=' + str(MAX_train_episode) + '_MaxEpLen=' + str(MAX_episode_length) + '_AvgSteps.txt'
+    write_buffer = np.array(avg_steps_list).transpose()
+    np.savetxt(root_path + output_file_name, write_buffer)

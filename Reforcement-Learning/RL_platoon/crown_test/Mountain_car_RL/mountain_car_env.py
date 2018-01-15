@@ -44,8 +44,8 @@ def random_reset(method=None):
 
 
 def cal_reward(obs, reward_function=None):
-    if not reward_function:
-        reward = np.abs(obs[0] - (-0.5))  # 距离开始的地方越远，奖励越多
+    if not reward_function:                         # 距离开始的地方越远，奖励越多
+        reward = np.abs(obs[0] - (-0.5))
     elif reward_function == 'original':             # 原始的奖励方法
         reward = -1
     return reward

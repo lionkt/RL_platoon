@@ -28,13 +28,13 @@ avg_steps_list = []
 
 for i_episode in range(MAX_train_episode):
     if (i_episode + 1) % Eval_interval == 0:
-        print('=== Now finish %.3f', (i_episode + 1) / MAX_train_episode * 100, '% of ', str(MAX_train_episode),
+        print('=== Now finish %.3f' %((i_episode + 1) / MAX_train_episode * 100), '% of ', str(MAX_train_episode),
               'eps')
     # begin eval
     if (i_episode + 1) % Eval_interval == 0 or i_episode == 0:
         avg_steps = eval_module.eval_mountain_car(RL=RL, eval_eps=Eval_episode, reset_method=3)
         avg_steps_list.append(avg_steps)
-        print('--- eval, avg steps: %.3f', avg_steps)
+        print('--- eval, avg steps: %.3f' % avg_steps)
 
     # begin train
     observation = mountain_car_env.random_reset(method=3)
