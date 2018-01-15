@@ -1,70 +1,78 @@
-import os
+"""
+Policy Gradient, Reinforcement Learning.
+
+Using:
+Tensorflow: 1.0
+gym: 0.8.0
+"""
 
 import gym
+import os
+from Mountain_car_RL.DeepRL_method import PolicyGradient
+import matplotlib.pyplot as plt
 
-from Mountain_car_RL.DeepRL_method import DeepQNetwork
-import Mountain_car_RL.mountain_car_env as mountain_car_env
+DISPLAY_REWARD_THRESHOLD = -2000  # renders environment if total episode reward is greater then this threshold
+# episode: 154   reward: -10667
+# episode: 387   reward: -2009
+# episode: 489   reward: -1006
+# episode: 628   reward: -502
 
-# env = gym.make('MountainCar-v0')
-# env = env.unwrapped
 
-# print(env.action_space)
-# print(env.observation_space)
-# print(env.observation_space.high)
-# print(env.observation_space.low)
-
-MAX_train_episode = 100
+MAX_train_episode = 500
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-RL = DeepQNetwork(n_actions=2, n_features=2, learning_rate=0.001, e_greedy=0.9,
-                  replace_target_iter=300, memory_size=3000,
-                  e_greedy_increment=0.0001)
+env = gym.make('MountainCar-v0')
+env.seed(1)  # reproducible, general Policy gradient has high variance
+env = env.unwrapped
 
-total_steps = 0
+print(env.action_space)
+print(env.observation_space)
+print(env.observation_space.high)
+print(env.observation_space.low)
+
+RL = PolicyGradient(
+    n_actions=env.action_space.n,
+    n_features=env.observation_space.shape[0],
+    learning_rate=0.02,
+    reward_decay=0.995,
+    # output_graph=True,
+)
 
 for i_episode in range(MAX_train_episode):
-    if (i_episode + 1) % 20 == 0:
-        print('=== Now finish', str((i_episode+1) / MAX_train_episode * 100), '% of ', str(MAX_train_episode), 'eps')
 
-    observation = mountain_car_env.random_reset()
-    ep_r = 0
+    observation = env.reset()
     ep_step = 0
+
     while True:
-        # env.render()
 
         action = RL.choose_action(observation)
 
-        # observation_, reward, done, info = env.step(action)
-        observation_, done = mountain_car_env.step_next(observation, action)
+        observation_, reward, done, info = env.step(action)  # reward = -1 in all cases
 
-        # 车开得越高 reward 越大
-        reward = mountain_car_env.cal_reward(observation_)
+        RL.store_transition(observation, action, reward)
 
-        RL.store_transition(observation, action, reward, observation_)
-
-        if total_steps > 1000:
-            RL.learn()
-
-        ep_r += reward
         ep_step += 1
+
         if done:
-            get = '| Get' if observation_[0] >= mountain_car_env.GOAL else '| ----'
+            # calculate running reward
+            ep_rs_sum = sum(RL.ep_rs)
+            if 'running_reward' not in globals():
+                running_reward = ep_rs_sum
+            else:
+                running_reward = running_reward * 0.99 + ep_rs_sum * 0.01
+
+            vt = RL.learn()  # train
+
             print('Epi: ', i_episode,
-                  get,
-                  '| Ep_r: ', round(ep_r, 4),
+                  '| Ep_r: ', round(running_reward, 4),
                   '| Epsilon: ', round(RL.epsilon, 2),
                   '| Ep_step: ', str(ep_step))
+
             break
 
-        if ep_step > 300:
+        if ep_step >= 500:
             break
 
         observation = observation_
-        total_steps += 1
-
-        # RL.plot_cost()
-
-
-
