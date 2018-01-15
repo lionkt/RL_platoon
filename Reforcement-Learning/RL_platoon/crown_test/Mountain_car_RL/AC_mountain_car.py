@@ -8,15 +8,20 @@ gym 0.8.0
 # import gym
 import numpy as np
 import tensorflow as tf
+import os
 import Mountain_car_RL.mountain_car_env as mountain_car_env
 import Mountain_car_RL.Evaluate_func as eval_module
 
 np.random.seed(2)
 tf.set_random_seed(2)  # reproducible
 
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 # Superparameters
 OUTPUT_GRAPH = False
-MAX_train_episode = 1000
+MAX_train_episode = 500
 MAX_episode_length = 300
 Eval_interval = 50
 Eval_episode = 100
@@ -144,6 +149,7 @@ if __name__ == '__main__':
 
         # begin eval
         if (i_episode + 1) % Eval_interval == 0 or i_episode == 0:
+            print('========== begin Actor-critic mountain car ==========')
             avg_steps = eval_module.eval_mountain_car(RL=actor, eval_eps=Eval_episode, reset_method=3,
                                                       reward_function=None)
             avg_steps_list.append(avg_steps)

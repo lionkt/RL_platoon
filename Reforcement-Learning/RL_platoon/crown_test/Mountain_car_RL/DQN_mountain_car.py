@@ -12,13 +12,13 @@ import Mountain_car_RL.Evaluate_func as eval_module
 # print(env.observation_space.high)
 # print(env.observation_space.low)
 
-MAX_train_episode = 40
+MAX_train_episode = 500
 MAX_episode_length = 300
-Eval_interval = 40
+Eval_interval = 50
 Eval_episode = 100
 
-# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 RL = DeepQNetwork(n_actions=2, n_features=2, learning_rate=0.001, e_greedy=0.9, replace_target_iter=300,
                   memory_size=3000, e_greedy_increment=0.0001)
@@ -32,6 +32,7 @@ for i_episode in range(MAX_train_episode):
               'eps')
     # begin eval
     if (i_episode + 1) % Eval_interval == 0 or i_episode == 0:
+        print('========== begin DQN mountain car eval ==========')
         avg_steps = eval_module.eval_mountain_car(RL=RL, eval_eps=Eval_episode, reset_method=3)
         avg_steps_list.append(avg_steps)
         print('--- eval, avg steps: %.3f' % avg_steps)

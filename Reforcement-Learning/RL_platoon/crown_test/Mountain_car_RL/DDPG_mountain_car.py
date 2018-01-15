@@ -10,10 +10,14 @@ gym 0.8.0
 import tensorflow as tf
 import numpy as np
 # import gym
+import os
 import Mountain_car_RL.mountain_car_env as mountain_car_env
 import Mountain_car_RL.Evaluate_func as eval_module
 
 #####################  hyper parameters  ####################
+
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 MAX_train_episode = 500
 MAX_episode_length = 300
@@ -138,6 +142,7 @@ if __name__ == '__main__':
 
         # begin eval
         if (i_episode + 1) % Eval_interval == 0 or i_episode == 0:
+            print('========== begin DDPG mountain car ==========')
             avg_steps = eval_module.eval_mountain_car(RL=ddpg, eval_eps=Eval_episode, reset_method=3,
                                                       reward_function=None)
             avg_steps_list.append(avg_steps)
