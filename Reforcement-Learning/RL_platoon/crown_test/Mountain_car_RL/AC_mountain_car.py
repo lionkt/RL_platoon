@@ -181,6 +181,8 @@ if __name__ == '__main__':
                 break
 
     root_path = '../OutputImg/Mountain_car/'
+    if not os.path.exists(root_path):
+        os.mkdir(root_path)
     output_file_name = 'AC' + '_MaxEp=' + str(MAX_train_episode) + '_MaxEpLen=' + str(MAX_episode_length) + '_AvgSteps.txt'
     write_buffer = np.array(avg_steps_list).transpose()
     np.savetxt(root_path + output_file_name, write_buffer)

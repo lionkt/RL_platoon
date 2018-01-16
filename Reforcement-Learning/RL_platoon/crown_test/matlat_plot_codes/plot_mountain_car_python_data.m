@@ -65,20 +65,20 @@ figure;
 for th_ = 1:length(BP_exist_flag)
     if th_==1 && BP_exist_flag(th_)~=0
         str_ = [str_, '''DQN'','];
-        hd = plot(iter_list,DQN_avg_step,'linewidth',1.5);
+        hd1 = plot(iter_list,DQN_avg_step,'linewidth',1.5);
         hold on;
     elseif th_==2 && BP_exist_flag(th_)~=0
         str_ = [str_, '''Actor-Critic'','];
-        hd = plot(iter_list,AC_avg_step,'linewidth',1.5);
+        hd2 = plot(iter_list,AC_avg_step,'linewidth',1.5);
         hold on;
     elseif th_==3 && BP_exist_flag(th_)~=0
         str_ = [str_, '''DDPG'''];
-        hd = plot(iter_list,DDPG_avg_step,'linewidth',1.5);
+        hd3 = plot(iter_list,DDPG_avg_step,'linewidth',1.5);
         hold on;
     end
     
 end
-legend( str_);
+legend([hd1,hd2,hd3], 'DQN','Actor-Critic','DDPG');
 grid on; xlabel('iter-times');ylabel('mean-steps');
 
 
@@ -88,11 +88,11 @@ for th_=1:RBN_plot_length
     plot(iter_list,BAC_avg_step(:,th_),'linewidth',1.5);
     hold on;
 end
-grid on; title('BAC method');ylim([0, 300]);ylabel('mean-steps');
+grid on; title('BAC method');ylim([50, 250]);ylabel('mean-steps');
 subplot(212);
 for th_=1:RBN_plot_length
     plot(iter_list,MCPG_avg_step(:,th_),'linewidth',1.5);
     hold on;
 end
 title('MCPG method');
-grid on; xlabel('iter-times');ylabel('mean-steps');
+grid on; xlabel('iter-times');ylabel('mean-steps');ylim([50, 260]);

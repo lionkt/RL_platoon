@@ -21,9 +21,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 MAX_train_episode = 500
 MAX_episode_length = 300
-LR_A = 0.001    # learning rate for actor
-LR_C = 0.002    # learning rate for critic
-GAMMA = 0.995     # reward discount
+LR_A = 0.005    # learning rate for actor
+LR_C = 0.001    # learning rate for critic
+GAMMA = 0.997     # reward discount
 TAU = 0.01      # soft replacement
 MEMORY_CAPACITY = 10000
 BATCH_SIZE = 32
@@ -177,6 +177,8 @@ if __name__ == '__main__':
 
     # output performance to file
     root_path = '../OutputImg/Mountain_car/'
+    if not os.path.exists(root_path):
+        os.mkdir(root_path)
     output_file_name = 'DDPG' + '_MaxEp=' + str(MAX_train_episode) + '_MaxEpLen=' + str(
         MAX_episode_length) + '_AvgSteps.txt'
     write_buffer = np.array(avg_steps_list).transpose()
