@@ -16,7 +16,7 @@ learning_param.eval_episode_num = 100;
 learning_param.alpha_init = 0.025;
 learning_param.train_episode_num = 10;
 
-learning_param.gamma = 0.95;
+learning_param.gamma = 0.99;
 learning_param.alp_variance_adaptive = 0;
 learning_param.alp_schedule = 0;
 learning_param.alp_update_param = 500;

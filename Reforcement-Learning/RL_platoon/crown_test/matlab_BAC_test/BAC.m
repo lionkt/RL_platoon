@@ -67,7 +67,7 @@ for update_th = 1:learning_param.max_update_num
     else
         alpha = learning_param.alpha_init;
     end
-    theta = theta + (alpha * grad_BAC);
+    theta = theta - (alpha * grad_BAC);
         
 end
 

@@ -13,7 +13,6 @@ learning_param.max_update_num = 500;
 learning_param.eval_interval = 50;
 learning_param.eval_episode_num = 100;
 learning_param.alpha_init = 0.025;
-% learning_param.gamma = 0.95;
 learning_param.train_episode_num = 10;
 
 %%% init environment and traing parameters
