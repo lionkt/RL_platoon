@@ -9,7 +9,6 @@ gym 0.8.0
 
 import tensorflow as tf
 import numpy as np
-# import gym
 import os
 import Mountain_car_RL.mountain_car_env as mountain_car_env
 import Mountain_car_RL.Evaluate_func as eval_module
@@ -79,7 +78,6 @@ class DDPG(object):
 
     def choose_action(self, s):
         probs =  self.sess.run(self.a, {self.S: s[np.newaxis, :]})[0]
-        # act = np.random.choice(np.arange(probs.shape[1]), p=probs.ravel())
         return probs
 
     def learn(self):
@@ -120,13 +118,8 @@ class DDPG(object):
 
 ###############################  training  ####################################
 if __name__ == '__main__':
-    # env = gym.make(ENV_NAME)
-    # env = env.unwrapped
-    # env.seed(1)
-
     s_dim = mountain_car_env.NUM_FEATURE# env.observation_space.shape[0]
-    # a_dim = env.action_space.n
-    a_dim = 1   #env.action_space.shape[0]
+    a_dim = 1   # 将动作空间扩展到连续空间
     a_bound = mountain_car_env.ACT[1] # env.action_space.high
 
     ddpg = DDPG(a_dim, s_dim, a_bound)
@@ -158,8 +151,6 @@ if __name__ == '__main__':
             # Add exploration noise
             a = ddpg.choose_action(s)
             a = np.clip(np.random.normal(a, var), -2, 2)    # add randomness to action selection for exploration
-
-            # s_, r, done, info = env.step(a)
             s_, done = mountain_car_env.step_next(s, a)
             r = mountain_car_env.cal_reward(s_, reward_function=None)
 

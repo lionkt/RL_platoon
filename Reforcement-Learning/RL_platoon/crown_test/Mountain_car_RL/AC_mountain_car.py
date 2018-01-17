@@ -3,9 +3,7 @@ Actor-Critic using TD-error as the Advantage, Reinforcement Learning.
 
 Using:
 tensorflow 1.0
-gym 0.8.0
 """
-# import gym
 import numpy as np
 import tensorflow as tf
 import os
@@ -29,10 +27,6 @@ Eval_episode = 100
 GAMMA = 0.995     # reward discount in TD error
 LR_A = 0.001    # learning rate for actor
 LR_C = 0.01     # learning rate for critic
-
-# env = gym.make('MountainCar-v0')
-# env.seed(1)  # reproducible
-# env = env.unwrapped
 
 n_features = mountain_car_env.NUM_FEATURE # env.observation_space.shape[0]
 n_actions = mountain_car_env.NUM_ACT # env.action_space.n
@@ -97,8 +91,6 @@ class Critic(object):
                 inputs=self.s,
                 units=20,  # number of hidden units
                 activation=tf.nn.relu,  # None
-                # have to be linear to make sure the convergence of actor.
-                # But linear approximator seems hardly learns the correct Q.
                 kernel_initializer=tf.random_normal_initializer(0., .1),  # weights
                 bias_initializer=tf.constant_initializer(0.1),  # biases
                 name='l1'
@@ -156,7 +148,6 @@ if __name__ == '__main__':
             print('------ eval, avg steps: %.1f' %(avg_steps))
 
         # begin train
-        # s = env.reset()
         s = mountain_car_env.random_reset(method=3)
         ep_step = 0
         track_r = []

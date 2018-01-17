@@ -1,4 +1,5 @@
 """
+参考了Morvan的强化学习教程
 Tensorflow: 1.0
 """
 
@@ -48,7 +49,6 @@ class DeepQNetwork:
 
         if output_graph:
             # $ tensorboard --logdir=logs
-            # tf.train.SummaryWriter soon be deprecated, use following
             tf.summary.FileWriter("logs/", self.sess.graph)
 
         self.sess.run(tf.global_variables_initializer())
@@ -87,13 +87,11 @@ class DeepQNetwork:
             # c_names(collections_names) are the collections to store variables
             c_names = ['target_net_params', tf.GraphKeys.GLOBAL_VARIABLES]
 
-            # first layer. collections is used later when assign to target net
             with tf.variable_scope('l1'):
                 w1 = tf.get_variable('w1', [self.n_features, n_l1], initializer=w_initializer, collections=c_names)
                 b1 = tf.get_variable('b1', [1, n_l1], initializer=b_initializer, collections=c_names)
                 l1 = tf.nn.relu(tf.matmul(self.s_, w1) + b1)
 
-            # second layer. collections is used later when assign to target net
             with tf.variable_scope('l2'):
                 w2 = tf.get_variable('w2', [n_l1, self.n_actions], initializer=w_initializer, collections=c_names)
                 b2 = tf.get_variable('b2', [1, self.n_actions], initializer=b_initializer, collections=c_names)
@@ -127,7 +125,6 @@ class DeepQNetwork:
         # check to replace target parameters
         if self.learn_step_counter % self.replace_target_iter == 0:
             self.sess.run(self.replace_target_op)
-            # print('\ntarget_params_replaced\n')
 
         # sample batch memory from all memory
         if self.memory_counter > self.memory_size:
@@ -193,8 +190,6 @@ class PolicyGradient:
 
         if output_graph:
             # $ tensorboard --logdir=logs
-            # http://0.0.0.0:6006/
-            # tf.train.SummaryWriter soon be deprecated, use following
             tf.summary.FileWriter("logs/", self.sess.graph)
 
         self.sess.run(tf.global_variables_initializer())
