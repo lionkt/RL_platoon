@@ -4,11 +4,11 @@ import scipy as sp
 # define boundary
 MAX_CAR_NUMBER = 5  # 最大的车辆数目
 ### 半实物仿真的ACC参数
-# MIN_ACC = -10.0
-# MAX_ACC = 6.0
+MIN_ACC = -10.0
+MAX_ACC = 6.0
 ### Acceleration-Deceleration Behaviour of Various Vehicle Types论文的参数
-MIN_ACC = -4
-MAX_ACC = 2.5
+# MIN_ACC = -5    #4
+# MAX_ACC = 3   #2.5
 
 MAX_V = 60 / 3.6
 TURN_MAX_V = 4.2
@@ -22,7 +22,7 @@ UPDATE_TIME_PER_DIDA = 0.03  # 在c++版本的仿真平台的3D工程中，取�
 START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 1.4
 EQUAL_TO_ZERO_SPEED = 0.2
 
-DES_PLATOON_INTER_DISTANCE = 12.5  # 车队的理想间距，单位是m
+DES_PLATOON_INTER_DISTANCE = 5  # 车队的理想间距，单位是m
 ROLE_SPACE = ['leader', 'follower']
 FOLLOW_STRATEGY = ['ACC', 'CACC', 'RL']
 

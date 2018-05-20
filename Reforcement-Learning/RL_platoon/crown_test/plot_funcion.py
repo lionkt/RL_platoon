@@ -1,5 +1,4 @@
 import matplotlib
-matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import car_env_DDPG_3cars  as car_env_3_car
 import numpy as np

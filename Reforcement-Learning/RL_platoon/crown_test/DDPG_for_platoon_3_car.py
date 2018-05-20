@@ -43,7 +43,7 @@ BATCH_SIZE = 128     # 32 get better output than 16
 VAR_MIN = 0.01       # 0.05
 
 
-LOAD = False
+LOAD = True
 # LOAD = True
 OUTPUT_GRAPH = True
 # USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
