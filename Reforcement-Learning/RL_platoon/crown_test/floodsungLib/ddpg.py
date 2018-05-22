@@ -11,23 +11,30 @@ from critic_network import CriticNetwork
 from actor_network_bn import ActorNetwork
 from replay_buffer import ReplayBuffer
 
-# Hyper Parameters:
-
-REPLAY_BUFFER_SIZE = 1000000
-REPLAY_START_SIZE = 10000
-BATCH_SIZE = 64
+# training Hyper Parameters:
+REPLAY_BUFFER_SIZE = 100000
+REPLAY_START_SIZE = 1000
+BATCH_SIZE = 128
 GAMMA = 0.99
+# network hyper-parameters
+LAYER1_SIZE = 400
+LAYER2_SIZE = 300
+actor_LEARNING_RATE = 1e-4
+critic_LEARNING_RATE = 1e-3
+TAU = 0.001
+critic_L2_REG = 0.01
 
 
 class DDPG:
     """docstring for DDPG"""
-    def __init__(self, env):
+    def __init__(self, state_dim, action_dim):
         self.name = 'DDPG' # name for uploading results
-        self.environment = env
+        # self.environment = env
+
         # Randomly initialize actor network and critic network
         # with both their target networks
-        self.state_dim = env.observation_space.shape[0]
-        self.action_dim = env.action_space.shape[0]
+        self.state_dim = state_dim
+        self.action_dim = action_dim
 
         # limit graphic ram
         config = tf.ConfigProto()
@@ -35,8 +42,11 @@ class DDPG:
         config.gpu_options.per_process_gpu_memory_fraction = 0.5  # 至少一块卡上留70%的显存，保证5个进程能跑起来
         self.sess = tf.InteractiveSession(config=config)
 
-        self.actor_network = ActorNetwork(self.sess,self.state_dim,self.action_dim)
-        self.critic_network = CriticNetwork(self.sess,self.state_dim,self.action_dim)
+        # build networks
+        self.actor_network = ActorNetwork(self.sess, self.state_dim, self.action_dim, LAYER1_SIZE, LAYER2_SIZE, TAU,
+                                          actor_LEARNING_RATE)
+        self.critic_network = CriticNetwork(self.sess, self.state_dim, self.action_dim, LAYER1_SIZE, LAYER2_SIZE, TAU,
+                                            critic_LEARNING_RATE, critic_L2_REG)
         
         # initialize replay buffer
         self.replay_buffer = ReplayBuffer(REPLAY_BUFFER_SIZE)

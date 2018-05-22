@@ -4,22 +4,27 @@ import numpy as np
 import math
 
 
-LAYER1_SIZE = 400
-LAYER2_SIZE = 300
-LEARNING_RATE = 1e-3
-TAU = 0.001
-L2 = 0.01
+# LAYER1_SIZE = 400
+# LAYER2_SIZE = 300
+# LEARNING_RATE = 1e-3
+# TAU = 0.001
+# L2 = 0.01
 
 class CriticNetwork:
 	"""docstring for CriticNetwork"""
-	def __init__(self,sess,state_dim,action_dim):
+	def __init__(self, sess, state_dim, action_dim, l1_size, l2_size, tau, critic_lr, critic_L2_REG):
 		self.time_step = 0
 		self.sess = sess
+		self.tau = tau
+		self.critic_lr = critic_lr
+		self.critic_L2_REG = critic_L2_REG	# 2范数正则项参数
+
 		# create q network
+		nn_size = [l1_size, l2_size]
 		self.state_input,\
 		self.action_input,\
 		self.q_value_output,\
-		self.net = self.create_q_network(state_dim,action_dim)
+		self.net = self.create_q_network(state_dim,action_dim,nn_size)
 
 		# create target q network (the same structure with q network)
 		self.target_state_input,\
@@ -37,15 +42,15 @@ class CriticNetwork:
 	def create_training_method(self):
 		# Define training optimizer
 		self.y_input = tf.placeholder("float",[None,1])
-		weight_decay = tf.add_n([L2 * tf.nn.l2_loss(var) for var in self.net])
+		weight_decay = tf.add_n([self.critic_L2_REG * tf.nn.l2_loss(var) for var in self.net])
 		self.cost = tf.reduce_mean(tf.square(self.y_input - self.q_value_output)) + weight_decay
-		self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(self.cost)
+		self.optimizer = tf.train.AdamOptimizer(self.critic_lr).minimize(self.cost)
 		self.action_gradients = tf.gradients(self.q_value_output,self.action_input)
 
-	def create_q_network(self,state_dim,action_dim):
+	def create_q_network(self,state_dim,action_dim,nn_size):
 		# the layer size could be changed
-		layer1_size = LAYER1_SIZE
-		layer2_size = LAYER2_SIZE
+		layer1_size = nn_size[0]
+		layer2_size = nn_size[1]
 
 		state_input = tf.placeholder("float",[None,state_dim])
 		action_input = tf.placeholder("float",[None,action_dim])
@@ -68,7 +73,7 @@ class CriticNetwork:
 		state_input = tf.placeholder("float",[None,state_dim])
 		action_input = tf.placeholder("float",[None,action_dim])
 
-		ema = tf.train.ExponentialMovingAverage(decay=1-TAU)
+		ema = tf.train.ExponentialMovingAverage(decay=1-self.tau)
 		target_update = ema.apply(net)
 		target_net = [ema.average(x) for x in net]
 

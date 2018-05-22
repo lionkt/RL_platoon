@@ -7,6 +7,8 @@
 
 import numpy as np
 import numpy.random as nr
+import matplotlib.pyplot as plt
+
 
 class OUNoise:
     """docstring for OUNoise"""
@@ -32,7 +34,6 @@ if __name__ == '__main__':
     states = []
     for i in range(1000):
         states.append(ou.noise())
-    import matplotlib.pyplot as plt
-
+    plt.figure()
     plt.plot(states)
     plt.show()

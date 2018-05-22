@@ -5,24 +5,29 @@ import math
 
 
 # Hyper Parameters
-LAYER1_SIZE = 400
-LAYER2_SIZE = 300
-LEARNING_RATE = 1e-4
-TAU = 0.001
-BATCH_SIZE = 64
+# LAYER1_SIZE = 400
+# LAYER2_SIZE = 300
+# LEARNING_RATE = 1e-4
+# TAU = 0.001
+# BATCH_SIZE = 64
 
 class ActorNetwork:
 	"""docstring for ActorNetwork"""
-	def __init__(self,sess,state_dim,action_dim):
 
+	def __init__(self, sess, state_dim, action_dim, l1_size, l2_size, tau, actor_lr):
 		self.sess = sess
 		self.state_dim = state_dim
 		self.action_dim = action_dim
+		self.tau = tau
+		self.actor_lr = actor_lr
 		# create actor network
-		self.state_input,self.action_output,self.net,self.is_training = self.create_network(state_dim,action_dim)
+		nn_size = [l1_size, l2_size]
+		self.state_input, self.action_output, self.net, self.is_training = self.create_network(state_dim, action_dim,
+																							   nn_size)
 
 		# create target actor network
-		self.target_state_input,self.target_action_output,self.target_update,self.target_is_training = self.create_target_network(state_dim,action_dim,self.net)
+		self.target_state_input, self.target_action_output, self.target_update, self.target_is_training = self.create_target_network(
+			state_dim, action_dim, self.net)
 
 		# define training rules
 		self.create_training_method()
@@ -30,16 +35,17 @@ class ActorNetwork:
 		self.sess.run(tf.initialize_all_variables())
 
 		self.update_target()
-		#self.load_network()
+
+	# self.load_network()
 
 	def create_training_method(self):
 		self.q_gradient_input = tf.placeholder("float",[None,self.action_dim])
 		self.parameters_gradients = tf.gradients(self.action_output,self.net,-self.q_gradient_input)
-		self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(zip(self.parameters_gradients,self.net))
+		self.optimizer = tf.train.AdamOptimizer(self.actor_lr).apply_gradients(zip(self.parameters_gradients,self.net))
 
-	def create_network(self,state_dim,action_dim):
-		layer1_size = LAYER1_SIZE
-		layer2_size = LAYER2_SIZE
+	def create_network(self,state_dim,action_dim,nn_size):
+		layer1_size = nn_size[0]
+		layer2_size = nn_size[1]
 
 		state_input = tf.placeholder("float",[None,state_dim])
 		is_training = tf.placeholder(tf.bool)
@@ -64,7 +70,7 @@ class ActorNetwork:
 	def create_target_network(self,state_dim,action_dim,net):
 		state_input = tf.placeholder("float",[None,state_dim])
 		is_training = tf.placeholder(tf.bool)
-		ema = tf.train.ExponentialMovingAverage(decay=1-TAU)
+		ema = tf.train.ExponentialMovingAverage(decay=1-self.tau)
 		target_update = ema.apply(net)
 		target_net = [ema.average(x) for x in net]
 

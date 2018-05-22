@@ -14,7 +14,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 def main():
     env = filter_env.makeFilteredEnv(gym.make(ENV_NAME))
-    agent = DDPG(env)
+    state_dim = env.observation_space.shape[0]
+    action_dim = env.action_space.shape[0]
+    agent = DDPG(state_dim, action_dim)
     # env.monitor.start('experiments/' + ENV_NAME,force=True)
 
     for episode in range(EPISODES):
