@@ -43,7 +43,7 @@ BATCH_SIZE = 128     # 32 get better output than 16
 VAR_MIN = 0.01       # 0.05
 
 
-LOAD = True
+LOAD = False
 # LOAD = True
 OUTPUT_GRAPH = True
 # USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
@@ -199,8 +199,11 @@ class Memory(object):
         indices = np.random.choice(self.capacity, size=n)
         return self.data[indices, :]
 
-
-sess = tf.Session()
+# limit graphic RAM usage
+config = tf.ConfigProto()
+# config.gpu_options.allow_growth = True
+config.gpu_options.per_process_gpu_memory_fraction = 0.5  # 至少一块卡上留70%的显存，保证5个进程能跑起来
+sess = tf.Session(config=config)
 
 # Create actor and critic for 2-car following.
 actor = Actor(sess, ACTION_DIM, ACTION_BOUND[1], LR_A, REPLACE_ITER_A)

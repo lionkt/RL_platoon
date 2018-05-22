@@ -14,10 +14,11 @@ import math
 class ActorNetwork:
 	"""docstring for ActorNetwork"""
 
-	def __init__(self, sess, state_dim, action_dim, l1_size, l2_size, tau, actor_lr):
+	def __init__(self, sess, state_dim, action_dim, action_bound, l1_size, l2_size, tau, actor_lr):
 		self.sess = sess
 		self.state_dim = state_dim
 		self.action_dim = action_dim
+		self.action_bound = action_bound
 		self.tau = tau
 		self.actor_lr = actor_lr
 		# create actor network
@@ -65,7 +66,12 @@ class ActorNetwork:
 
 		action_output = tf.tanh(tf.matmul(layer2_bn,W3) + b3)
 
-		return state_input,action_output,[W1,b1,W2,b2,W3,b3],is_training
+		# scale action output
+		a_center = (self.action_bound[0] + self.action_bound[1]) / 2
+		a_scale = (self.action_bound[1] - self.action_bound[0]) / 2
+		scaled_action_output = tf.add(tf.multiply(action_output, a_scale), a_center, name='a_scaled')
+
+		return state_input, scaled_action_output, [W1, b1, W2, b2, W3, b3], is_training
 
 	def create_target_network(self,state_dim,action_dim,net):
 		state_input = tf.placeholder("float",[None,state_dim])
@@ -83,7 +89,12 @@ class ActorNetwork:
 
 		action_output = tf.tanh(tf.matmul(layer2_bn,target_net[4]) + target_net[5])
 
-		return state_input,action_output,target_update,is_training
+		# scale action output
+		a_center = (self.action_bound[0] + self.action_bound[1]) / 2
+		a_scale = (self.action_bound[1] - self.action_bound[0]) / 2
+		scaled_action_output = tf.add(tf.multiply(action_output, a_scale), a_center, name='a_scaled')
+
+		return state_input, scaled_action_output, target_update, is_training
 
 	def update_target(self):
 		self.sess.run(self.target_update)

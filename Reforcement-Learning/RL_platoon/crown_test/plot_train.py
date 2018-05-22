@@ -1,6 +1,3 @@
-import matplotlib
-
-matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import car_env_DDPG_3cars as car_env_3_car
 import numpy as np
@@ -14,9 +11,12 @@ def plot_train_core(reward_list, explore_list, info_list, observation_list, writ
     plt.subplot(211)
     plt.plot(reward_list, linewidth=2)
     plt.title('train reward ' + str(title_in) + '%')
-    plt.subplot(212)
-    plt.plot(explore_list)
-    plt.title('train explore value ' + str(title_in) + '%')
+
+    if len(explore_list) > 0:
+        plt.subplot(212)
+        plt.plot(explore_list)
+        plt.title('train explore value ' + str(title_in) + '%')
+
     out_png = './OutputImg/train parameters.png'  # save file
     plt.savefig(out_png, dpi=300)
 

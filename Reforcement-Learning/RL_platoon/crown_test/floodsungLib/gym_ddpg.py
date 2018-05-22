@@ -1,5 +1,5 @@
-import filter_env
-from ddpg import *
+from floodsungLib.filter_env import *
+from floodsungLib.ddpg import *
 import gc
 import os
 gc.enable()
@@ -13,11 +13,13 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 def main():
-    env = filter_env.makeFilteredEnv(gym.make(ENV_NAME))
+    # env = makeFilteredEnv(gym.make(ENV_NAME))
+    env = gym.make(ENV_NAME)
+
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
     agent = DDPG(state_dim, action_dim)
-    # env.monitor.start('experiments/' + ENV_NAME,force=True)
+    env.monitor.start('experiments/' + ENV_NAME,force=True)
 
     for episode in range(EPISODES):
         state = env.reset()
@@ -36,7 +38,7 @@ def main():
             for i in range(TEST):
                 state = env.reset()
                 for j in range(env.spec.timestep_limit):
-                    env.render()
+                    # env.render()
                     action = agent.action(state)  # direct action for test
                     state, reward, done, _ = env.step(action)
                     total_reward += reward
