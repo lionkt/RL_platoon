@@ -41,7 +41,7 @@ class DDPG:
         # limit graphic ram
         config = tf.ConfigProto()
         # config.gpu_options.allow_growth = True
-        config.gpu_options.per_process_gpu_memory_fraction = 0.5  # 至少一块卡上留70%的显存，保证5个进程能跑起来
+        config.gpu_options.per_process_gpu_memory_fraction = 0.4  # 至少一块卡上留70%的显存，保证5个进程能跑起来
         self.sess = tf.InteractiveSession(config=config)
 
         # build networks

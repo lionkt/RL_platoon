@@ -49,7 +49,7 @@ def train():
     plot_iter = 1  # 当前的训练图绘制次数
     # train params
     var = 5  # control exploration, original 2.5
-    var_damp = 0.99997  # var damping ratio, original 0.99995
+    var_damp = 0.99996  # var damping ratio, original 0.99995
     last_a = 0  # 上一个加速度值
     Carlist = []
     for ep in range(MAX_EPISODES):
