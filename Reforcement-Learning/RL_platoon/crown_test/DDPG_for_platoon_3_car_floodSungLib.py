@@ -48,6 +48,8 @@ def train():
     plot_interval = 8  # 绘制训练图像的次数
     plot_iter = 1  # 当前的训练图绘制次数
     # train params
+    var = 5  # control exploration, original 2.5
+    var_damp = 0.99997  # var damping ratio, original 0.99995
     last_a = 0  # 上一个加速度值
     Carlist = []
     for ep in range(MAX_EPISODES):
@@ -73,12 +75,12 @@ def train():
         ep_reward = 0
 
         while True:
-            # while True:
             # 时间戳更新
             time_tag += car_env.AI_DT
 
             # Added exploration noise
-            a = agent.noise_action(s)
+            # a = agent.OU_noise_action(s)
+            a = agent.normal_noise_action(s, var)
             a = np.clip(a, ACTION_BOUND[0], ACTION_BOUND[1])
             s_, done, info = car_env.step_next(Carlist, time_tag, action=a)
             r = car_env.get_reward_function(s_, (Carlist[2].acc - last_a) / car_env.AI_DT)
@@ -88,7 +90,7 @@ def train():
             last_a = Carlist[2].acc
 
             # 存储当前链，并进行学习
-            agent.perceive(s,a,r,s_,done)
+            var = agent.perceive(s, a, r, s_, done, var, var_damp)
 
             # 更新状态
             s = s_
@@ -97,10 +99,11 @@ def train():
             if done:
                 # if done:
                 result = '| done' if done else '| ----'
-                print('Ep:', ep, result, '| R: %i' % int(ep_reward), '| info: ', info, '| dist-err(f1-f2):%.2f' % s[1],
+                print('Ep:', ep, result, '| R: %i' % int(ep_reward), '| Explore: %.2f' % var, '| info: ', info, '| dist-err(f1-f2):%.2f' % s[1],
                       '| speed-err(f1-f2):%.2f' % s[0], '| speed-err(le-f2):%.2f' % s[2])
                 ## save data for plot
                 reward_list.append(int(ep_reward))
+                explore_list.append(var)
                 info_list.append(info)
                 observation_list.append(s)
                 break

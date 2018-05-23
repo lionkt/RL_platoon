@@ -12,10 +12,12 @@ from .actor_network_bn import ActorNetwork
 from .replay_buffer import ReplayBuffer
 
 # training Hyper Parameters:
-REPLAY_BUFFER_SIZE = 100000
+REPLAY_BUFFER_SIZE = 20000
 REPLAY_START_SIZE = 10000
 BATCH_SIZE = 128
 GAMMA = 0.99
+VAR_MIN = 0.01       # 0.05
+
 # network hyper-parameters
 LAYER1_SIZE = 400
 LAYER2_SIZE = 300
@@ -91,21 +93,33 @@ class DDPG:
         self.actor_network.update_target()
         self.critic_network.update_target()
 
-    def noise_action(self, state):
+    def OU_noise_action(self, state):
         # Select action a_t according to the current policy and exploration noise
+        # Ornstein–Uhlenbeck process noise
         action = self.actor_network.action(state)
         return action + self.exploration_noise.noise()
+
+    def normal_noise_action(self, state, var):
+        # Select action a_t according to the current policy and exploration noise
+        # 借鉴了morvan的衰减的正态分布噪声
+        action = self.actor_network.action(state)
+        noise = np.clip(np.random.normal(action, var), self.action_bound[0], self.action_bound[1])
+        return action + noise
 
     def action(self, state):
         action = self.actor_network.action(state)
         return action
 
-    def perceive(self, state, action, reward, next_state, done):
+    def perceive(self, state, action, reward, next_state, done, explore_var=None, explore_var_damp=None):
         # Store transition (s_t,a_t,r_t,s_{t+1}) in replay buffer
         self.replay_buffer.add(state, action, reward, next_state, done)
 
         # Store transitions to replay start size then start training
         if self.replay_buffer.count() > REPLAY_START_SIZE:
+            # dampling var
+            if explore_var:
+                explore_var = max([explore_var * explore_var_damp, VAR_MIN])  # decay the action randomness
+            # begin train
             self.train()
 
         # if self.time_step % 10000 == 0:
@@ -115,3 +129,6 @@ class DDPG:
         # Re-iniitialize the random process when an episode ends
         if done:
             self.exploration_noise.reset()
+
+        if explore_var:
+            return explore_var
