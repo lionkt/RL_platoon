@@ -3,6 +3,7 @@ import numpy as np
 import car_env_DDPG_3cars as car_env
 import plot_funcion as my_plot
 import plot_train as train_plot
+import time
 import gc
 import os
 gc.enable()
@@ -17,6 +18,9 @@ tf.set_random_seed(1)
 
 # hyper params
 MAX_EPISODES = 10 # 3000
+var = 5  # control exploration, original 2.5
+var_damp = 0.99996  # var damping ratio, original 0.99995
+INIT_CAR_DISTANCE = 25  # 初始时车辆的间隔
 TEST = 10
 
 
@@ -25,7 +29,6 @@ LOAD_NN = False
 OUTPUT_GRAPH = True
 # USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
 USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
-INIT_CAR_DISTANCE = 25  # 初始时车辆的间隔
 
 
 STATE_DIM = car_env.STATE_DIM
@@ -39,7 +42,9 @@ agent = DDPG(STATE_DIM, ACTION_DIM, ACTION_BOUND, LOAD_NN, OUTPUT_GRAPH)
 
 
 
-def train():
+def train(var, var_damp):
+    var_original = var
+    var_damp_original = var_damp
     # record field
     reward_list = []
     explore_list = []
@@ -47,9 +52,6 @@ def train():
     observation_list = []
     plot_interval = 8  # 绘制训练图像的次数
     plot_iter = 1  # 当前的训练图绘制次数
-    # train params
-    var = 5  # control exploration, original 2.5
-    var_damp = 0.99996  # var damping ratio, original 0.99995
     last_a = 0  # 上一个加速度值
     Carlist = []
     for ep in range(MAX_EPISODES):
@@ -73,7 +75,6 @@ def train():
         CarList_update_platoon_info(Carlist, des_platoon_size=len(Carlist), build_platoon=True)
         s = car_env.reset(Carlist)
         ep_reward = 0
-
         while True:
             # 时间戳更新
             time_tag += car_env.AI_DT
@@ -120,7 +121,53 @@ def train():
                                        title_in=ep / MAX_EPISODES * 100)
 
     # save nn params and graph
-    agent.save()
+    output_time_tag = time.strftime('%m-%d_%H:%M:%S', time.localtime(time.time()))
+    partial_folder = 'NN_' + output_time_tag + '/'
+    if not os.path.exists(trained_nn_path + partial_folder):
+        os.mkdir(trained_nn_path + partial_folder)
+
+    # save ddpg params
+    agent.save(partial_folder)
+
+    # network hyper-parameters
+    params_file = open(trained_nn_path + partial_folder + 'parameters_file.txt', 'w')
+    params_file.write('============= external params ============== ' + '\n')
+    params_file.write('MAX_EPISODES = ' + str(MAX_EPISODES) + '\n')
+    params_file.write('INIT_CAR_DISTANCE = ' + str(INIT_CAR_DISTANCE) + '\n')
+    params_file.write('STATE_DIM = ' + str(STATE_DIM) + '\n')
+    params_file.write('ACTION_DIM = ' + str(ACTION_DIM) + '\n')
+    params_file.write('============= training params ============== ' + '\n')
+    params_file.write('REPLAY_BUFFER_SIZE = ' + str(REPLAY_BUFFER_SIZE) + '\n')
+    params_file.write('REPLAY_START_SIZE = ' + str(REPLAY_START_SIZE) + '\n')
+    params_file.write('BATCH_SIZE = ' + str(BATCH_SIZE) + '\n')
+    params_file.write('GAMMA = ' + str(GAMMA) + '\n')
+    params_file.write('exploration var = ' + str(var_original) + '\n')
+    params_file.write('exploration var dampling = ' + str(var_damp_original) + '\n')
+    params_file.write('exploration var min = ' + str(VAR_MIN) + '\n')
+    params_file.write('============= network params ============== ' + '\n')
+    params_file.write('LAYER1_SIZE = ' + str(LAYER1_SIZE) + '\n')
+    params_file.write('LAYER2_SIZE = ' + str(LAYER2_SIZE) + '\n')
+    params_file.write('actor_LEARNING_RATE = ' + str(actor_LEARNING_RATE) + '\n')
+    params_file.write('critic_LEARNING_RATE = ' + str(critic_LEARNING_RATE) + '\n')
+    params_file.write('TAU = ' + str(TAU) + '\n')
+    params_file.write('critic_L2_REG = ' + str(critic_L2_REG) + '\n')
+    params_file.write('============= vehicle and road params ============== ' + '\n')
+    params_file.write('MAX_CAR_NUMBER = ' + str(car_env.MAX_CAR_NUMBER) + '\n')
+    params_file.write('MIN_ACC = ' + str(car_env.MIN_ACC) + '\n')
+    params_file.write('MAX_ACC = ' + str(car_env.MAX_ACC) + '\n')
+    params_file.write('MAX_V = ' + str(car_env.MAX_V) + '\n')
+    params_file.write('TURN_MAX_V = ' + str(car_env.TURN_MAX_V) + '\n')
+    params_file.write('DES_PLATOON_INTER_DISTANCE = ' + str(car_env.DES_PLATOON_INTER_DISTANCE) + '\n')
+    params_file.write('TIME_TAG_UP_BOUND = ' + str(car_env.TIME_TAG_UP_BOUND) + '\n')
+    params_file.write('ROAD_LENGTH = ' + str(car_env.ROAD_LENGTH) + '\n')
+    params_file.write('CAR_LENGTH = ' + str(car_env.CAR_LENGTH) + '\n')
+    params_file.write('LANE_WIDTH = ' + str(car_env.LANE_WIDTH) + '\n')
+    params_file.write('AI_DT = ' + str(car_env.AI_DT) + '\n')
+    params_file.write('UPDATE_TIME_PER_DIDA = ' + str(car_env.UPDATE_TIME_PER_DIDA) + '\n')
+    params_file.write('START_LEADER_TEST_DISTANCE = ' + str(car_env.START_LEADER_TEST_DISTANCE) + '\n')
+    params_file.write('EQUAL_TO_ZERO_SPEED = ' + str(car_env.EQUAL_TO_ZERO_SPEED) + '\n')
+    params_file.close()
+
 
 
 def eval():
@@ -200,6 +247,6 @@ def CarList_update_platoon_info(Carlist, des_platoon_size, build_platoon):
 
 if __name__ == '__main__':
     if LOAD_NN == False:
-        train()
+        train(var, var_damp)
     else:
         eval()

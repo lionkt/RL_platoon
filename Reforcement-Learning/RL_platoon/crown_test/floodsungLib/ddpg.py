@@ -55,7 +55,7 @@ class DDPG:
         # limit graphic ram
         config = tf.ConfigProto()
         # config.gpu_options.allow_growth = True
-        config.gpu_options.per_process_gpu_memory_fraction = 0.4  # 至少一块卡上留70%的显存，保证5个进程能跑起来
+        config.gpu_options.per_process_gpu_memory_fraction = 0.28  # 至少一块卡上留70%的显存，保证5个进程能跑起来
         self.sess = tf.InteractiveSession(config=config)
 
         # build networks
@@ -155,22 +155,21 @@ class DDPG:
         if explore_var:
             return explore_var
 
+
     def restore(self):
         if self.LOAD_NN == True:
             print('==== Load trained NN ====')
             saver = tf.train.Saver()
             saver.restore(self.sess, tf.train.latest_checkpoint(trained_nn_path))
 
-    def save(self):
-        saver = tf.train.Saver()
-        time_tag = time.strftime('%m-%d_%H:%M', time.localtime(time.time()))
-        root_folder = 'NN_' + time_tag
-        if not os.path.exists(trained_nn_path + root_folder):
-            os.mkdir(trained_nn_path + root_folder)
 
-        ckpt_path = os.path.join(trained_nn_path + root_folder, 'DDPG.ckpt')
+    def save(self, partial_folder):
+        # save nn params
+        saver = tf.train.Saver()
+        ckpt_path = os.path.join(trained_nn_path + partial_folder, 'DDPG.ckpt')
         save_path = saver.save(self.sess, ckpt_path, write_meta_graph=True)
         print("\nSave Model %s\n" % save_path)
+
         # output graph
         if self.OUTPUT_GRAPH == True:
-            tf.summary.FileWriter(trained_nn_path + root_folder, graph=self.sess.graph)
+            tf.summary.FileWriter(trained_nn_path + partial_folder, graph=self.sess.graph)
