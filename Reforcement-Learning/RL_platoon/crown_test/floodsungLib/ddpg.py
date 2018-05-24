@@ -18,7 +18,7 @@ from .replay_buffer import ReplayBuffer
 REPLAY_BUFFER_SIZE = 20000
 REPLAY_START_SIZE = 10000
 BATCH_SIZE = 128
-GAMMA = 0.99
+GAMMA = 0.995
 VAR_MIN = 0.01       # 0.05
 
 # network hyper-parameters
@@ -27,7 +27,7 @@ LAYER2_SIZE = 300
 actor_LEARNING_RATE = 1e-4
 critic_LEARNING_RATE = 1e-3
 TAU = 0.001
-critic_L2_REG = 0.01
+critic_L2_REG = 0.001
 
 # path
 if not os.path.exists('./NN_Data/'):

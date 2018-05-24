@@ -2,6 +2,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import car_env_DDPG_3cars  as car_env_3_car
 import numpy as np
+import os
 from scipy.fftpack import fft, ifft
 
 
@@ -207,6 +208,6 @@ def plot_data_core(CarList_I, write_flag):
 # 画图的函数
 def plot_data(CarList_I, write_flag = None):
     plot_data_core(CarList_I, write_flag = write_flag)
-    plt.show()
+    # plt.show()
 
 # 存储画出的图像

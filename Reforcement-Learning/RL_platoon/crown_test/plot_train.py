@@ -44,4 +44,4 @@ def plot_train_core(reward_list, explore_list, info_list, observation_list, writ
     out_png = './OutputImg/train l-f1-f2 parameters.png'  # save file
     plt.savefig(out_png, dpi=300)
 
-    plt.show()
+    # plt.show()

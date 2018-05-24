@@ -12,8 +12,8 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 # set random seed
-np.random.seed(1)
-tf.set_random_seed(1)
+# np.random.seed(1)
+# tf.set_random_seed(1)
 
 
 # hyper params
@@ -114,10 +114,10 @@ def train(var, var_damp):
                                        title_in=1 * 100)
             my_plot.plot_data(Carlist, write_flag=True)
         # 画一下训练过程中的图像
-        if ep == MAX_EPISODES // plot_interval * plot_iter:
-            plot_iter += 1
-            train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list, write_flag=False,
-                                       title_in=ep / MAX_EPISODES * 100)
+        # if ep == MAX_EPISODES // plot_interval * plot_iter:
+        #     plot_iter += 1
+        #     train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list, write_flag=False,
+        #                                title_in=ep / MAX_EPISODES * 100)
 
     # save nn params and graph
     output_time_tag = time.strftime('%m-%d_%H:%M:%S', time.localtime(time.time()))
