@@ -16,12 +16,12 @@ tf.set_random_seed(1)
 
 
 # hyper params
-MAX_EPISODES = 3000
+MAX_EPISODES = 10 # 3000
 TEST = 10
 
 
-LOAD = False
-# LOAD = True
+LOAD_NN = False
+# LOAD_NN = True
 OUTPUT_GRAPH = True
 # USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
 USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
@@ -34,7 +34,7 @@ ACTION_BOUND = car_env.ACTION_BOUND
 
 
 ######## build DDPG networks ########
-agent = DDPG(STATE_DIM, ACTION_DIM, ACTION_BOUND)
+agent = DDPG(STATE_DIM, ACTION_DIM, ACTION_BOUND, LOAD_NN, OUTPUT_GRAPH)
 
 
 
@@ -119,6 +119,70 @@ def train():
             train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list, write_flag=False,
                                        title_in=ep / MAX_EPISODES * 100)
 
+    # save nn params and graph
+    agent.save()
+
+
+def eval():
+    Carlist = []
+    # 每个episode都要reset一下
+    Carlist.clear()
+    time_tag = 0.0
+    car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, INIT_CAR_DISTANCE * 3])
+    car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, INIT_CAR_DISTANCE * 2])
+    car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, INIT_CAR_DISTANCE])
+    car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, 0])
+    car5 = car_env.car(id=4, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                       tar_speed=60.0 / 3.6, location=[0, -INIT_CAR_DISTANCE])
+    # 将新车加入车队
+    if len(Carlist) == 0:
+        Carlist.append(car1)
+        Carlist.append(car2)
+        Carlist.append(car3)
+        Carlist.append(car4)  # Carlist.append(car5)
+    CarList_update_platoon_info(Carlist, des_platoon_size=len(Carlist), build_platoon=True)  # 把车辆加入车队
+    s = car_env.reset(Carlist)
+    done = False
+    # main loop for eval
+    while True:
+        time_tag += car_env.AI_DT  # 时间戳更新
+        # 多车同时加入仿真的计算
+        Carlist[0].calculate(Carlist[0], STRATEGY='ACC', time_tag=time_tag, action=None)  # 先算头车
+        Carlist[1].calculate(Carlist[0:2], STRATEGY='ACC', time_tag=time_tag, action=None)  # 先算第二辆
+        for car_index in range(len(Carlist)):
+            if car_index <= 1:
+                continue
+            if car_index == 2:
+                temp_list = []  # 3辆车的数组
+                temp_list.append(Carlist[car_index - 2])
+                temp_list.append(Carlist[car_index - 1])
+                temp_list.append(Carlist[car_index])
+            elif car_index >= 3:
+                temp_list = []  # 3辆车的数组
+                temp_list.append(Carlist[0])
+                temp_list.append(Carlist[car_index - 1])
+                temp_list.append(Carlist[car_index])
+            s, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 先读取一下当前的状态
+            a = agent.action(s)  # 根据当前状态，从训练好的网络选择动作
+            temp_list[2].calculate(temp_list, STRATEGY='RL', time_tag=time_tag, action=a)  # 将输入的动作用于运算
+            s_, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 更新一下当前的状态
+
+        # 信息更新
+        turns = 0
+        while turns <= car_env.AI_DT:
+            car_env.CarList_update_info_core(Carlist, car_env.UPDATE_TIME_PER_DIDA)
+            turns += car_env.UPDATE_TIME_PER_DIDA
+
+        # 判断仿真是否结束
+        if done:
+            break
+
+    my_plot.plot_data(Carlist, write_flag=True)
+
 
 # 根据build_platoon，更新是否加入platoon的信息
 def CarList_update_platoon_info(Carlist, des_platoon_size, build_platoon):
@@ -135,4 +199,7 @@ def CarList_update_platoon_info(Carlist, des_platoon_size, build_platoon):
 
 
 if __name__ == '__main__':
-    train()
+    if LOAD_NN == False:
+        train()
+    else:
+        eval()

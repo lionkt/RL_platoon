@@ -6,6 +6,9 @@
 import gym
 import tensorflow as tf
 import numpy as np
+import os
+import time
+
 from .ou_noise import OUNoise
 from .critic_network import CriticNetwork
 from .actor_network_bn import ActorNetwork
@@ -26,18 +29,29 @@ critic_LEARNING_RATE = 1e-3
 TAU = 0.001
 critic_L2_REG = 0.01
 
+# path
+trained_nn_path = './NN_Data/3_cars_following_floodSung/'
+if not os.path.exists(trained_nn_path):
+    os.mkdir(trained_nn_path)
+
 
 class DDPG:
     """docstring for DDPG"""
-    def __init__(self, state_dim, action_dim, action_bound):
+    def __init__(self, state_dim, action_dim, action_bound, LOAD_NN, OUTPUT_GRAPH):
         self.name = 'DDPG' # name for uploading results
-        # self.environment = env
 
         # Randomly initialize actor network and critic network
         # with both their target networks
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.action_bound = action_bound
+
+        # training settings
+        self.LOAD_NN = LOAD_NN
+        self.OUTPUT_GRAPH = OUTPUT_GRAPH
+        # net经过了初始化的flag
+        self.init_flag = False if not LOAD_NN else True
+
         # limit graphic ram
         config = tf.ConfigProto()
         # config.gpu_options.allow_growth = True
@@ -49,7 +63,15 @@ class DDPG:
                                           LAYER2_SIZE, TAU, actor_LEARNING_RATE)
         self.critic_network = CriticNetwork(self.sess, self.state_dim, self.action_dim, LAYER1_SIZE, LAYER2_SIZE, TAU,
                                             critic_LEARNING_RATE, critic_L2_REG)
-        
+
+        # tensorflow params initialize
+        if self.init_flag == False:
+            self.init_flag = True
+            self.sess.run(tf.global_variables_initializer())
+        else:
+            self.restore()
+
+
         # initialize replay buffer
         self.replay_buffer = ReplayBuffer(REPLAY_BUFFER_SIZE)
 
@@ -132,3 +154,23 @@ class DDPG:
 
         if explore_var:
             return explore_var
+
+    def restore(self):
+        if self.LOAD_NN == True:
+            print('==== Load trained NN ====')
+            saver = tf.train.Saver()
+            saver.restore(self.sess, tf.train.latest_checkpoint(trained_nn_path))
+
+    def save(self):
+        saver = tf.train.Saver()
+        time_tag = time.strftime('%m-%d_%H:%M', time.localtime(time.time()))
+        root_folder = 'NN_' + time_tag
+        if not os.path.exists(trained_nn_path + root_folder):
+            os.mkdir(trained_nn_path + root_folder)
+
+        ckpt_path = os.path.join(trained_nn_path + root_folder, 'DDPG.ckpt')
+        save_path = saver.save(self.sess, ckpt_path, write_meta_graph=True)
+        print("\nSave Model %s\n" % save_path)
+        # output graph
+        if self.OUTPUT_GRAPH == True:
+            tf.summary.FileWriter(trained_nn_path + root_folder, graph=self.sess.graph)

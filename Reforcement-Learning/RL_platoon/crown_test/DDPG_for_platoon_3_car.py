@@ -219,7 +219,7 @@ M = Memory(MEMORY_CAPACITY, dims=2 * STATE_DIM + ACTION_DIM + 1)
 
 
 saver = tf.train.Saver()
-path = './' + 'Data/3_cars_following/'
+path = './' + 'NN_Data/3_cars_following/'
 
 if LOAD:
     saver.restore(sess, tf.train.latest_checkpoint(path))
