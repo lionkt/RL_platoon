@@ -30,6 +30,9 @@ TAU = 0.001
 critic_L2_REG = 0.01
 
 # path
+if not os.path.exists('./NN_Data/'):
+    os.mkdir('./NN_Data/')
+
 trained_nn_path = './NN_Data/3_cars_following_floodSung/'
 if not os.path.exists(trained_nn_path):
     os.mkdir(trained_nn_path)

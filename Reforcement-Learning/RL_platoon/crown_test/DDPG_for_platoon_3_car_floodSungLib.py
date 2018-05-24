@@ -17,9 +17,9 @@ tf.set_random_seed(1)
 
 
 # hyper params
-MAX_EPISODES = 10 # 3000
+MAX_EPISODES = 3000 # 3000
 var = 5  # control exploration, original 2.5
-var_damp = 0.99996  # var damping ratio, original 0.99995
+var_damp = 0.99995  # var damping ratio, original 0.99995
 INIT_CAR_DISTANCE = 25  # 初始时车辆的间隔
 TEST = 10
 
@@ -38,7 +38,6 @@ ACTION_BOUND = car_env.ACTION_BOUND
 
 ######## build DDPG networks ########
 agent = DDPG(STATE_DIM, ACTION_DIM, ACTION_BOUND, LOAD_NN, OUTPUT_GRAPH)
-
 
 
 

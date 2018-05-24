@@ -5,6 +5,9 @@ import numpy as np
 from scipy.fftpack import fft, ifft
 
 
+if not os.path.exists('./OutputImg/'):
+    os.mkdir('./OutputImg/')
+
 # 画图函数核心函数
 def plot_data_core(CarList_I, write_flag):
     max_speed_length = 0
