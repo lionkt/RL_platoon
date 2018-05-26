@@ -17,9 +17,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 # hyper params
-MAX_EPISODES = 20 # 3000
-var = 5  # control exploration, original 2.5
-var_damp = 0.99995  # var damping ratio, original 0.99995
+MAX_EPISODES = 1800 # 3000
+var = 2.5  # control exploration, original 2.5
+var_damp = 0.99996  # var damping ratio, original 0.99995
 INIT_CAR_DISTANCE = 25  # 初始时车辆的间隔
 TEST = 10
 
@@ -45,8 +45,7 @@ def train(var, var_damp):
     # save nn params and graph
     output_time_tag = time.strftime('%m-%d_%H:%M:%S', time.localtime(time.time()))
     partial_folder = 'NN_' + output_time_tag + '/'
-    if not os.path.exists(trained_nn_path + partial_folder):
-        os.mkdir(trained_nn_path + partial_folder)
+
 
     var_original = var
     var_damp_original = var_damp
@@ -105,7 +104,7 @@ def train(var, var_damp):
             if done:
                 # if done:
                 result = '| done' if done else '| ----'
-                print('Ep:', ep, result, '| R: %i' % int(ep_reward), '| Explore: %.2f' % var, '| info: ', info, '| dist-err(f1-f2):%.2f' % s[1],
+                print('Ep:', ep, result, '| R: %i' % int(ep_reward), '| Explore: %.4f' % var, '| info: ', info, '| dist-err(f1-f2):%.2f' % s[1],
                       '| speed-err(f1-f2):%.2f' % s[0], '| speed-err(le-f2):%.2f' % s[2])
                 ## save data for plot
                 reward_list.append(int(ep_reward))
@@ -114,16 +113,20 @@ def train(var, var_damp):
                 observation_list.append(s)
                 break
 
-        # 画一下最后一次的图像
-        if ep == MAX_EPISODES - 1:
-            train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list, write_flag=False,
-                                       title_in=1 * 100, output_path=trained_nn_path + partial_folder)
-            my_plot.plot_data(Carlist, output_path=trained_nn_path + partial_folder, write_flag=True)
         # 画一下训练过程中的图像
         # if ep == MAX_EPISODES // plot_interval * plot_iter:
         #     plot_iter += 1
         #     train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list, write_flag=False,
         #                                title_in=ep / MAX_EPISODES * 100)
+
+    # 训练完毕，准备输出前，先创建文件夹
+    if not os.path.exists(trained_nn_path + partial_folder):
+        os.mkdir(trained_nn_path + partial_folder)
+
+    # 将训练得到的数据输出
+    train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list, write_flag=False,
+                               title_in=1 * 100, output_path=trained_nn_path + partial_folder)
+    my_plot.plot_data(Carlist, output_path=trained_nn_path + partial_folder, write_flag=True)
 
     # save ddpg params
     agent.save(partial_folder)
