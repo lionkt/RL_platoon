@@ -1,10 +1,16 @@
 import matplotlib.pyplot as plt
 import car_env_DDPG_3cars as car_env_3_car
 import numpy as np
+import os
 
 
 # 绘制train过程的函数
-def plot_train_core(reward_list, explore_list, info_list, observation_list, write_flag, title_in):
+def plot_train_core(reward_list, explore_list, info_list, observation_list, write_flag, title_in, output_path):
+    # mkdir for data output
+    full_path = output_path + './OutputImg/'
+    if not os.path.exists(full_path):
+        os.mkdir(full_path)
+
     observation_list = np.array(observation_list)
     figure_name = 'train parameters, Now ' + str(title_in) + '%'
     plt.figure(figure_name)
@@ -17,7 +23,7 @@ def plot_train_core(reward_list, explore_list, info_list, observation_list, writ
         plt.plot(explore_list)
         plt.title('train explore value ' + str(title_in) + '%')
 
-    out_png = './OutputImg/train parameters.png'  # save file
+    out_png = full_path + 'train parameters.png'  # save file
     plt.savefig(out_png, dpi=300)
 
     #####
@@ -41,7 +47,7 @@ def plot_train_core(reward_list, explore_list, info_list, observation_list, writ
     plt.plot(observation_list[:, 2], linewidth=2)
     plt.title('leader-f2 speed error ' + str(title_in) + '%')
     plt.grid(True)
-    out_png = './OutputImg/train l-f1-f2 parameters.png'  # save file
+    out_png = full_path + 'train l-f1-f2 parameters.png'  # save file
     plt.savefig(out_png, dpi=300)
 
     # plt.show()

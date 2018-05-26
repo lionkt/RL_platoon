@@ -6,11 +6,9 @@ import os
 from scipy.fftpack import fft, ifft
 
 
-if not os.path.exists('./OutputImg/'):
-    os.mkdir('./OutputImg/')
 
 # 画图函数核心函数
-def plot_data_core(CarList_I, write_flag):
+def plot_data_core(CarList_I, full_path, write_flag):
     max_speed_length = 0
     max_acc_length = 0
     max_location_length = 0
@@ -46,7 +44,7 @@ def plot_data_core(CarList_I, write_flag):
     plt.grid(True)
     if write_flag:
         write_buffer = np.array(write_buffer).transpose()
-        np.savetxt('./OutputImg/speed_data.txt', write_buffer)
+        np.savetxt(full_path + 'speed_data.txt', write_buffer)
         print('====speed data has been written=====')
     # plt.xlabel('time_steps')
 
@@ -71,7 +69,7 @@ def plot_data_core(CarList_I, write_flag):
     plt.grid(True)
     if write_flag:
         write_buffer = np.array(write_buffer).transpose()
-        np.savetxt('./OutputImg/acc_data.txt', write_buffer)
+        np.savetxt(full_path + 'acc_data.txt', write_buffer)
         print('====acc data has been written=====')
 
     write_buffer = []
@@ -97,10 +95,10 @@ def plot_data_core(CarList_I, write_flag):
     plt.grid(True)
     if write_flag:
         write_buffer = np.array(write_buffer).transpose()
-        np.savetxt('./OutputImg/jerk_data.txt', write_buffer)
+        np.savetxt(full_path + 'jerk_data.txt', write_buffer)
         print('====jerk data has been written=====')
 
-    out_png = './OutputImg/dynamics.png'    # save file
+    out_png = full_path + 'dynamics.png'    # save file
     plt.savefig(out_png, dpi=300)
 
 
@@ -131,7 +129,7 @@ def plot_data_core(CarList_I, write_flag):
     write_buffer = []
     if write_flag:
         write_buffer = np.array(data).transpose()
-        np.savetxt('./OutputImg/location_data.txt', write_buffer)
+        np.savetxt(full_path + 'location_data.txt', write_buffer)
         print('====location data has been written=====')
 
     index = 0
@@ -157,7 +155,7 @@ def plot_data_core(CarList_I, write_flag):
     plt.xlabel('time_steps')
     if write_flag:
         write_buffer = np.array(write_buffer).transpose()
-        np.savetxt('./OutputImg/inter-distance_data.txt', write_buffer)
+        np.savetxt(full_path + 'inter-distance_data.txt', write_buffer)
         print('====inter-distance data has been written=====')
 
 
@@ -189,7 +187,7 @@ def plot_data_core(CarList_I, write_flag):
     plt.ylabel('frequency-amplitude')
     plt.xlabel('time_steps')
 
-    out_png = './OutputImg/location.png'  # save file
+    out_png = full_path + 'location.png'  # save file
     plt.savefig(out_png, dpi=300)
 
     # 添加时间位移曲线
@@ -202,12 +200,18 @@ def plot_data_core(CarList_I, write_flag):
     plt.grid(True)
     plt.ylabel('y-position')
     plt.xlabel('time_steps')
-    out_png = './OutputImg/location-time.png'  # save file
+    out_png = full_path + 'location-time.png'  # save file
     plt.savefig(out_png, dpi=300)
 
+
 # 画图的函数
-def plot_data(CarList_I, write_flag = None):
-    plot_data_core(CarList_I, write_flag = write_flag)
+def plot_data(CarList_I, output_path, write_flag = None):
+    # mkdir for data output
+    full_path = output_path + './OutputImg/'
+    if not os.path.exists(full_path):
+        os.mkdir(full_path)
+
+    plot_data_core(CarList_I, full_path, write_flag = write_flag)
     # plt.show()
 
 # 存储画出的图像
