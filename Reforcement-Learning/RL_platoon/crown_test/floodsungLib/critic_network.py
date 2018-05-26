@@ -12,7 +12,7 @@ import math
 
 class CriticNetwork:
 	"""docstring for CriticNetwork"""
-	def __init__(self, sess, state_dim, action_dim, l1_size, l2_size, tau, critic_lr, critic_L2_REG):
+	def __init__(self, sess, state_dim, action_dim, l1_size, l2_size, l3_size, tau, critic_lr, critic_L2_REG):
 		self.time_step = 0
 		self.sess = sess
 		self.tau = tau
@@ -20,7 +20,7 @@ class CriticNetwork:
 		self.critic_L2_REG = critic_L2_REG	# 2范数正则项参数
 
 		# create q network
-		nn_size = [l1_size, l2_size]
+		nn_size = [l1_size, l2_size, l3_size]
 		self.state_input,\
 		self.action_input,\
 		self.q_value_output,\
@@ -51,23 +51,30 @@ class CriticNetwork:
 		# the layer size could be changed
 		layer1_size = nn_size[0]
 		layer2_size = nn_size[1]
+		layer3_size = nn_size[2]
 
 		state_input = tf.placeholder("float",[None,state_dim])
 		action_input = tf.placeholder("float",[None,action_dim])
 
-		W1 = self.variable([state_dim,layer1_size],state_dim)
-		b1 = self.variable([layer1_size],state_dim)
-		W2 = self.variable([layer1_size,layer2_size],layer1_size+action_dim)
-		W2_action = self.variable([action_dim,layer2_size],layer1_size+action_dim)
-		b2 = self.variable([layer2_size],layer1_size+action_dim)
-		W3 = tf.Variable(tf.random_uniform([layer2_size,1],-3e-3,3e-3))
-		b3 = tf.Variable(tf.random_uniform([1],-3e-3,3e-3))
+		W1 = self.variable([state_dim, layer1_size], state_dim)
+		b1 = self.variable([layer1_size], state_dim)
+		W2 = self.variable([layer1_size, layer2_size], layer1_size + action_dim)
+		W2_action = self.variable([action_dim, layer2_size], layer1_size + action_dim)
+		b2 = self.variable([layer2_size], layer1_size + action_dim)
 
-		layer1 = tf.nn.relu(tf.matmul(state_input,W1) + b1)
-		layer2 = tf.nn.relu(tf.matmul(layer1,W2) + tf.matmul(action_input,W2_action) + b2)
-		q_value_output = tf.identity(tf.matmul(layer2,W3) + b3)
+		W3 = self.variable([layer2_size, layer3_size], layer2_size)
+		b3 = self.variable([layer3_size], layer2_size)
 
-		return state_input,action_input,q_value_output,[W1,b1,W2,W2_action,b2,W3,b3]
+		W4 = tf.Variable(tf.random_uniform([layer3_size, 1], -3e-3, 3e-3))
+		b4 = tf.Variable(tf.random_uniform([1], -3e-3, 3e-3))
+
+		layer1 = tf.nn.relu(tf.matmul(state_input, W1) + b1)
+		layer2 = tf.nn.relu(tf.matmul(layer1, W2) + tf.matmul(action_input, W2_action) + b2)
+		layer3 = tf.nn.relu(tf.matmul(layer2, W3) + b3)
+
+		q_value_output = tf.identity(tf.matmul(layer3, W4) + b4)
+
+		return state_input, action_input, q_value_output, [W1, b1, W2, W2_action, b2, W3, b3, W4, b4]
 
 	def create_target_q_network(self,state_dim,action_dim,net):
 		state_input = tf.placeholder("float",[None,state_dim])
@@ -79,7 +86,9 @@ class CriticNetwork:
 
 		layer1 = tf.nn.relu(tf.matmul(state_input,target_net[0]) + target_net[1])
 		layer2 = tf.nn.relu(tf.matmul(layer1,target_net[2]) + tf.matmul(action_input,target_net[3]) + target_net[4])
-		q_value_output = tf.identity(tf.matmul(layer2,target_net[5]) + target_net[6])
+		layer3 = tf.nn.relu(tf.matmul(layer2,target_net[5]) + target_net[6])
+
+		q_value_output = tf.identity(tf.matmul(layer3,target_net[7]) + target_net[8])
 
 		return state_input,action_input,q_value_output,target_update
 

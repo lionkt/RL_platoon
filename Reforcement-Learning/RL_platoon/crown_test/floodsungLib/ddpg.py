@@ -3,7 +3,6 @@
 # Author: Flood Sung
 # Date: 2016.5.4
 # -----------------------------------
-import gym
 import tensorflow as tf
 import numpy as np
 import os
@@ -15,19 +14,20 @@ from .actor_network_bn import ActorNetwork
 from .replay_buffer import ReplayBuffer
 
 # training Hyper Parameters:
-REPLAY_BUFFER_SIZE = 20000
+REPLAY_BUFFER_SIZE = 30000
 REPLAY_START_SIZE = 10000
 BATCH_SIZE = 128
 GAMMA = 0.995
-VAR_MIN = 0.01       # 0.05
+VAR_MIN = 0.001       # 0.05
 
 # network hyper-parameters
-LAYER1_SIZE = 400
-LAYER2_SIZE = 300
+LAYER1_SIZE = 100
+LAYER2_SIZE = 200
+LAYER3_SIZE = 20
 actor_LEARNING_RATE = 1e-4
 critic_LEARNING_RATE = 1e-3
 TAU = 0.001
-critic_L2_REG = 0.001
+critic_L2_REG = 0.01
 
 # path
 if not os.path.exists('./NN_Data/'):
@@ -63,9 +63,9 @@ class DDPG:
 
         # build networks
         self.actor_network = ActorNetwork(self.sess, self.state_dim, self.action_dim, self.action_bound, LAYER1_SIZE,
-                                          LAYER2_SIZE, TAU, actor_LEARNING_RATE)
-        self.critic_network = CriticNetwork(self.sess, self.state_dim, self.action_dim, LAYER1_SIZE, LAYER2_SIZE, TAU,
-                                            critic_LEARNING_RATE, critic_L2_REG)
+                                          LAYER2_SIZE, LAYER3_SIZE, TAU, actor_LEARNING_RATE)
+        self.critic_network = CriticNetwork(self.sess, self.state_dim, self.action_dim, LAYER1_SIZE, LAYER2_SIZE,
+                                            LAYER3_SIZE, TAU, critic_LEARNING_RATE, critic_L2_REG)
 
         # tensorflow params initialize
         if self.init_flag == False:

@@ -17,7 +17,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 # hyper params
-MAX_EPISODES = 3000 # 3000
+MAX_EPISODES = 2000 # 3000
 var = 5  # control exploration, original 2.5
 var_damp = 0.99995  # var damping ratio, original 0.99995
 INIT_CAR_DISTANCE = 25  # 初始时车辆的间隔
@@ -146,6 +146,7 @@ def train(var, var_damp):
     params_file.write('============= network params ============== ' + '\n')
     params_file.write('LAYER1_SIZE = ' + str(LAYER1_SIZE) + '\n')
     params_file.write('LAYER2_SIZE = ' + str(LAYER2_SIZE) + '\n')
+    params_file.write('LAYER3_SIZE = ' + str(LAYER3_SIZE) + '\n')
     params_file.write('actor_LEARNING_RATE = ' + str(actor_LEARNING_RATE) + '\n')
     params_file.write('critic_LEARNING_RATE = ' + str(critic_LEARNING_RATE) + '\n')
     params_file.write('TAU = ' + str(TAU) + '\n')
