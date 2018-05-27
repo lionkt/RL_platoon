@@ -10,7 +10,9 @@ import time
 
 from .ou_noise import OUNoise
 from .critic_network import CriticNetwork
-from .actor_network_bn import ActorNetwork
+# from .actor_network_bn import ActorNetwork
+from .actor_network import ActorNetwork
+
 from .replay_buffer import ReplayBuffer
 
 # training Hyper Parameters:

@@ -104,7 +104,8 @@ def train(var, var_damp):
             if done:
                 # if done:
                 result = '| done' if done else '| ----'
-                print('Ep:', ep, result, '| R: %i' % int(ep_reward), '| Explore: %.4f' % var, '| info: ', info, '| dist-err(f1-f2):%.2f' % s[1],
+                print('Ep:', ep, result, '| R: %i' % int(ep_reward), '| Explore: %.4f' % var, '| info: ', info,
+                      '| dist-err(f1-f2):%.2f' % s[1], ' DES_dist:%.2f' % car_env.DES_PLATOON_INTER_DISTANCE,
                       '| speed-err(f1-f2):%.2f' % s[0], '| speed-err(le-f2):%.2f' % s[2])
                 ## save data for plot
                 reward_list.append(int(ep_reward))
@@ -232,7 +233,12 @@ def eval():
         if done:
             break
 
-    my_plot.plot_data(Carlist, write_flag=True)
+    # 测试结果输出
+    folder_name = trained_nn_path + 'evalOutput/'
+    if not os.path.exists(folder_name):
+        os.mkdir(folder_name)
+
+    my_plot.plot_data(Carlist, output_path=folder_name, write_flag=True)
 
 
 # 根据build_platoon，更新是否加入platoon的信息

@@ -21,6 +21,7 @@ import tensorflow as tf
 import numpy as np
 import os
 import shutil
+import time
 import car_env_DDPG_3cars as car_env
 import plot_funcion as my_plot
 import plot_train as train_plot
@@ -28,8 +29,8 @@ import plot_train as train_plot
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-np.random.seed(1)
-tf.set_random_seed(1)
+# np.random.seed(1)
+# tf.set_random_seed(1)
 
 MAX_EPISODES = 1200  # 1200
 # MAX_EP_STEPS = 200
@@ -40,7 +41,7 @@ REPLACE_ITER_A = 1100
 REPLACE_ITER_C = 1000
 MEMORY_CAPACITY = 10000
 BATCH_SIZE = 128     # 32 get better output than 16
-VAR_MIN = 0.01       # 0.05
+VAR_MIN = 0.005       # 0.05
 
 
 LOAD = False
@@ -202,7 +203,7 @@ class Memory(object):
 # limit graphic RAM usage
 config = tf.ConfigProto()
 # config.gpu_options.allow_growth = True
-config.gpu_options.per_process_gpu_memory_fraction = 0.5  # 至少一块卡上留70%的显存，保证5个进程能跑起来
+config.gpu_options.per_process_gpu_memory_fraction = 0.28  # 至少一块卡上留70%的显存，保证5个进程能跑起来
 sess = tf.Session(config=config)
 
 # Create actor and critic for 2-car following.
@@ -220,6 +221,8 @@ M = Memory(MEMORY_CAPACITY, dims=2 * STATE_DIM + ACTION_DIM + 1)
 
 saver = tf.train.Saver()
 path = './' + 'NN_Data/3_cars_following/'
+if not os.path.exists(path):
+    os.mkdir(path)
 
 if LOAD:
     saver.restore(sess, tf.train.latest_checkpoint(path))
@@ -231,6 +234,10 @@ if OUTPUT_GRAPH:
 
 
 def train():
+    # save nn params and graph
+    output_time_tag = time.strftime('%m-%d_%H:%M:%S', time.localtime(time.time()))
+    partial_folder = 'NN_' + output_time_tag + '/'
+
     # record field
     reward_list = []
     explore_list = []
@@ -304,22 +311,26 @@ def train():
                 info_list.append(info)
                 observation_list.append(s)
                 break
-        # 画一下最后一次的图像
-        if ep == MAX_EPISODES - 1:
-            train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list,
-                                       write_flag=False, title_in=1*100)
-            my_plot.plot_data(Carlist, write_flag=True)
-        # 画一下训练过程中的图像
-        if ep == MAX_EPISODES//plot_interval*plot_iter:
-            plot_iter += 1
-            train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list,
-                                       write_flag=False, title_in=ep/MAX_EPISODES*100)
 
-    if os.path.isdir(path): shutil.rmtree(path)
-    os.mkdir(path)
-    ckpt_path = os.path.join('./' + 'Data/3_cars_following/', 'DDPG.ckpt')
+        # # 画一下训练过程中的图像
+        # if ep == MAX_EPISODES//plot_interval*plot_iter:
+        #     plot_iter += 1
+        #     train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list,
+        #                                write_flag=False, title_in=ep/MAX_EPISODES*100)
+
+    # 训练完毕，准备输出前，先创建文件夹
+    if not os.path.exists(path + partial_folder):
+        os.mkdir(path + partial_folder)
+
+    ckpt_path = os.path.join(path + partial_folder, 'DDPG.ckpt')
     save_path = saver.save(sess, ckpt_path, write_meta_graph=True)
     print("\nSave Model %s\n" % save_path)
+
+    # 画一下最后一次的图像
+    train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list, write_flag=False,
+                               title_in=1 * 100, output_path=path + partial_folder)
+    my_plot.plot_data(Carlist, write_flag=True, output_path=path + partial_folder)
+
 
 
 def eval():
