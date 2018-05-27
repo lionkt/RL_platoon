@@ -123,13 +123,14 @@ def train(var, var_damp):
     if not os.path.exists(trained_nn_path + partial_folder):
         os.mkdir(trained_nn_path + partial_folder)
 
-    # 将训练得到的数据输出
+    # save ddpg params
+    agent.save(partial_folder)
+
+    # 将最后一次训练得到的数据输出
     train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list, write_flag=False,
                                title_in=1 * 100, output_path=trained_nn_path + partial_folder)
     my_plot.plot_data(Carlist, output_path=trained_nn_path + partial_folder, write_flag=True)
 
-    # save ddpg params
-    agent.save(partial_folder)
 
     # network hyper-parameters
     params_file = open(trained_nn_path + partial_folder + 'parameters_file.txt', 'w')

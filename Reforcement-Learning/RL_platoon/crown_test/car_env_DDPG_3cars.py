@@ -351,7 +351,7 @@ class car(object):
         if self.role == 'follower':
             alpha_2 = 0.0
             if STRATEGY == 'RL':
-                alpha_2 = 0.61  # 0.635
+                alpha_2 = 0.55 # 0.61(train)  # 0.635(eval)
             if strategy_flag == 1:  # 到达了multi-strategy的切换点
                 alpha_2 = 0.8
             self.acc = alpha_2 * old_acc + (1 - alpha_2) * self.acc
