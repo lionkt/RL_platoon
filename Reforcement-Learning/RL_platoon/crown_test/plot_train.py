@@ -25,6 +25,11 @@ def plot_train_core(reward_list, explore_list, info_list, observation_list, writ
 
     out_png = full_path + 'train parameters.png'  # save file
     plt.savefig(out_png, dpi=300)
+    write_buffer = reward_list
+    if write_flag:
+        write_buffer = np.array(write_buffer).transpose()
+        np.savetxt(full_path + 'train_reward.txt', write_buffer)
+        print('====train: reward has been written=====')
 
     #####
     figure_name = 'train l-f1-f2 parameters, Now ' + str(title_in) + '%'
@@ -37,11 +42,21 @@ def plot_train_core(reward_list, explore_list, info_list, observation_list, writ
     plt.ylim(-10, 40)
     plt.grid(True)
     plt.title('f1-f2 distance ' + str(title_in) + '%')
+    write_buffer = observation_list[:, 1]
+    if write_flag:
+        write_buffer = np.array(write_buffer)
+        np.savetxt(full_path + 'train_f1-f2-distance.txt', write_buffer)
+        print('====train: f1-f2_distance has been written=====')
 
     plt.subplot(312)
     plt.plot(observation_list[:, 0], linewidth=2)
     plt.grid(True)
     plt.title('f1-f2 speed error ' + str(title_in) + '%')
+    write_buffer = observation_list[:, 0]
+    if write_flag:
+        write_buffer = np.array(write_buffer)
+        np.savetxt(full_path + 'train_f1-f2-speed-error.txt', write_buffer)
+        print('====train: f1-f2_speed_error has been written=====')
 
     plt.subplot(313)
     plt.plot(observation_list[:, 2], linewidth=2)
@@ -49,5 +64,11 @@ def plot_train_core(reward_list, explore_list, info_list, observation_list, writ
     plt.grid(True)
     out_png = full_path + 'train l-f1-f2 parameters.png'  # save file
     plt.savefig(out_png, dpi=300)
+    write_buffer = observation_list[:, 2]
+    if write_flag:
+        write_buffer = np.array(write_buffer)
+        np.savetxt(full_path + 'train_leader-f2-speed-error.txt', write_buffer)
+        print('====train: leader-f2-speed-error has been written=====')
+
 
     # plt.show()
