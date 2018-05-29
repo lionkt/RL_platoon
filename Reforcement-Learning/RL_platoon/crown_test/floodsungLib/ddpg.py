@@ -10,16 +10,16 @@ import time
 
 from .ou_noise import OUNoise
 from .critic_network import CriticNetwork
-# from .actor_network_bn import ActorNetwork
-from .actor_network import ActorNetwork
+from .actor_network_bn import ActorNetwork
+# from .actor_network import ActorNetwork
 
 from .replay_buffer import ReplayBuffer
 
 # training Hyper Parameters:
-REPLAY_BUFFER_SIZE = 30000
+REPLAY_BUFFER_SIZE = 50000
 REPLAY_START_SIZE = 10000
 BATCH_SIZE = 128
-GAMMA = 0.99
+GAMMA = 0.999
 VAR_MIN = 0.005       # 0.05
 
 # network hyper-parameters
@@ -29,7 +29,7 @@ LAYER3_SIZE = 10
 actor_LEARNING_RATE = 1e-4
 critic_LEARNING_RATE = 1e-3
 TAU = 0.001
-critic_L2_REG = 0.01
+critic_L2_REG = 0.001
 
 # path
 if not os.path.exists('./NN_Data/'):
