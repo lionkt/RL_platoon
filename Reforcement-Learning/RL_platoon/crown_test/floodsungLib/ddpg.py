@@ -18,12 +18,12 @@ from .replay_buffer import ReplayBuffer
 # training Hyper Parameters:
 REPLAY_BUFFER_SIZE = 50000
 REPLAY_START_SIZE = 10000
-BATCH_SIZE = 128
-GAMMA = 0.999
+BATCH_SIZE = 256
+GAMMA = 0.9995
 VAR_MIN = 0.005       # 0.05
 
 # network hyper-parameters
-LAYER1_SIZE = 100
+LAYER1_SIZE = 200
 LAYER2_SIZE = 200
 LAYER3_SIZE = 10
 actor_LEARNING_RATE = 1e-4
@@ -60,7 +60,7 @@ class DDPG:
         # limit graphic ram
         config = tf.ConfigProto()
         # config.gpu_options.allow_growth = True
-        config.gpu_options.per_process_gpu_memory_fraction = 0.28  # 至少一块卡上留70%的显存，保证5个进程能跑起来
+        config.gpu_options.per_process_gpu_memory_fraction = 0.48  # 至少一块卡上留70%的显存，保证5个进程能跑起来
         self.sess = tf.InteractiveSession(config=config)
 
         # build networks

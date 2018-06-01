@@ -18,7 +18,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 # hyper params
 MAX_EPISODES = 1800 # 3000
-var = 2.5  # control exploration, original 2.5
+var = 3.0  # control exploration, original 2.5
 var_damp = 0.99996  # var damping ratio, original 0.99995
 INIT_CAR_DISTANCE = 25  # 初始时车辆的间隔
 TEST = 10
@@ -128,7 +128,7 @@ def train(var, var_damp):
     agent.save(partial_folder)
 
     # 将最后一次训练得到的数据输出
-    train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list, write_flag=False,
+    train_plot.plot_train_core(reward_list, explore_list, info_list, observation_list, write_flag=True,
                                title_in=1 * 100, output_path=trained_nn_path + partial_folder)
     my_plot.plot_data(Carlist, output_path=trained_nn_path + partial_folder, write_flag=True)
 
