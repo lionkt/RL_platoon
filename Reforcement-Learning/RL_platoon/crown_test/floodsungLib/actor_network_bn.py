@@ -141,9 +141,9 @@ class ActorNetwork:
 	def batch_norm_layer(self,x,training_phase,scope_bn,activation=None):
 		return tf.cond(training_phase, 
 		lambda: tf.contrib.layers.batch_norm(x, activation_fn=activation, center=True, scale=True,
-		updates_collections=None,is_training=True, reuse=None,scope=scope_bn,decay=0.98, epsilon=1e-5),
+		updates_collections=None,is_training=True, reuse=None,scope=scope_bn,decay=0.96, epsilon=1e-5),
 		lambda: tf.contrib.layers.batch_norm(x, activation_fn =activation, center=True, scale=True,
-		updates_collections=None,is_training=False, reuse=True,scope=scope_bn,decay=0.98, epsilon=1e-5))
+		updates_collections=None,is_training=False, reuse=True,scope=scope_bn,decay=0.96, epsilon=1e-5))
 '''
 	def load_network(self):
 		self.saver = tf.train.Saver()
