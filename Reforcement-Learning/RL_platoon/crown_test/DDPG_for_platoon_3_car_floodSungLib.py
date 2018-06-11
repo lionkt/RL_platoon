@@ -20,7 +20,6 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 MAX_EPISODES = 800 # 3000
 var = 2.5  # control exploration, original 2.5
 var_damp = 0.99996  # var damping ratio, original 0.99995
-INIT_CAR_DISTANCE = 20 + car_env.MAX_V/2  # 初始时车辆的间隔（原来的25）
 TEST = 10
 
 
@@ -46,7 +45,6 @@ def train(var, var_damp):
     output_time_tag = time.strftime('%m-%d_%H:%M:%S', time.localtime(time.time()))
     partial_folder = 'NN_' + output_time_tag + '/'
 
-
     var_original = var
     var_damp_original = var_damp
     # record field
@@ -64,12 +62,13 @@ def train(var, var_damp):
         time_tag = 0.0
         car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False,
                            tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6,
-                           location=[0, INIT_CAR_DISTANCE * 2])
+                           location=[0, car_env.INIT_CAR_DISTANCE * 2])
         car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False,
                            tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6,
-                           location=[0, INIT_CAR_DISTANCE])
+                           location=[0, car_env.INIT_CAR_DISTANCE])
         car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False,
-                           tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6, location=[0, 0])
+                           tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=60.0 / 3.6,
+                           location=[0, car_env.INIT_CAR_DISTANCE * 0])
         # 将新车加入车队
         if len(Carlist) == 0:
             Carlist.append(car1)
@@ -137,7 +136,7 @@ def train(var, var_damp):
     params_file = open(trained_nn_path + partial_folder + 'parameters_file.txt', 'w')
     params_file.write('============= external params ============== ' + '\n')
     params_file.write('MAX_EPISODES = ' + str(MAX_EPISODES) + '\n')
-    params_file.write('INIT_CAR_DISTANCE = ' + str(INIT_CAR_DISTANCE) + '\n')
+    params_file.write('INIT_CAR_DISTANCE = ' + str(car_env.INIT_CAR_DISTANCE) + '\n')
     params_file.write('STATE_DIM = ' + str(STATE_DIM) + '\n')
     params_file.write('ACTION_DIM = ' + str(ACTION_DIM) + '\n')
     params_file.write('============= training params ============== ' + '\n')
@@ -181,15 +180,15 @@ def eval():
     Carlist.clear()
     time_tag = 0.0
     car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, INIT_CAR_DISTANCE * 3])
+                       tar_speed=60.0 / 3.6, location=[0, car_env.INIT_CAR_DISTANCE * 3])
     car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, INIT_CAR_DISTANCE * 2])
+                       tar_speed=60.0 / 3.6, location=[0,  car_env.INIT_CAR_DISTANCE * 2])
     car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, INIT_CAR_DISTANCE])
+                       tar_speed=60.0 / 3.6, location=[0,  car_env.INIT_CAR_DISTANCE])
     car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, 0])
+                       tar_speed=60.0 / 3.6, location=[0,  car_env.INIT_CAR_DISTANCE * 0])
     car5 = car_env.car(id=4, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, -INIT_CAR_DISTANCE])
+                       tar_speed=60.0 / 3.6, location=[0, - car_env.INIT_CAR_DISTANCE])
     # 将新车加入车队
     if len(Carlist) == 0:
         Carlist.append(car1)

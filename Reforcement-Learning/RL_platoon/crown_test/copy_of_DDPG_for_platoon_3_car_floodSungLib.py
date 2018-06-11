@@ -17,7 +17,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
 # hyper params
-MAX_EPISODES = 900 # 3000
+MAX_EPISODES = 800 # 3000
 var = 2.5  # control exploration, original 2.5
 var_damp = 0.99996  # var damping ratio, original 0.99995
 # INIT_CAR_DISTANCE = 25  # 初始时车辆的间隔
