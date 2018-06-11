@@ -10,7 +10,7 @@ MAX_CAR_NUMBER = 5  # 最大的车辆数目
 MIN_ACC = -4
 MAX_ACC = 3.0
 
-MAX_V = 90 / 3.6
+MAX_V = 60 / 3.6
 TURN_MAX_V = 4.2
 TIME_TAG_UP_BOUND = 120
 ROAD_LENGTH = MAX_V * TIME_TAG_UP_BOUND
@@ -22,7 +22,7 @@ UPDATE_TIME_PER_DIDA = 0.03  # 在c++版本的仿真平台的3D工程中，取�
 START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 1.4
 EQUAL_TO_ZERO_SPEED = 0.2
 
-DES_PLATOON_INTER_DISTANCE = 15  # 车队的理想间距，单位是m
+DES_PLATOON_INTER_DISTANCE = 5  # 车队的理想间距，单位是m
 INIT_CAR_DISTANCE = 20 + MAX_V/2  # 初始时车辆的间隔（原来的25）
 
 ROLE_SPACE = ['leader', 'follower']
@@ -40,11 +40,11 @@ ACTION_BOUND = [MIN_ACC, MAX_ACC]
 
 # define car
 class car(object):
-    def __init__(self, id, role, tar_interDis, tar_speed, location=None, ingaged_in_platoon=None, leader=None,
+    def __init__(self, id, role, tar_interDis, tar_speed, init_speed=0.0 ,location=None, ingaged_in_platoon=None, leader=None,
                  previousCar=None, car_length=None):
         self.id = id
         self.role = role
-        self.speed = 0.0
+        self.speed = init_speed
         self.acc = 0.0
         if not location:
             self.location = np.zeros((1, 2))
@@ -66,6 +66,10 @@ class car(object):
         self.accData = []
         self.speedData = []
         self.locationData = []
+
+
+
+
 
     # 用acc-speed curve做限幅
     def __engine_speed_up_acc_curve(self, speed, p):
@@ -353,7 +357,7 @@ class car(object):
         if self.role == 'follower':
             alpha_2 = 0.0
             if STRATEGY == 'RL':
-                alpha_2 = 0.61  # 0.635
+                alpha_2 = 0.63  # 0.635
             if strategy_flag == 1:  # 到达了multi-strategy的切换点
                 alpha_2 = 0.8
             self.acc = alpha_2 * old_acc + (1 - alpha_2) * self.acc
