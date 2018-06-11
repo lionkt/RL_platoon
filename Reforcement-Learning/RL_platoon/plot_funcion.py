@@ -7,7 +7,7 @@ from scipy.fftpack import fft, ifft
 
 
 # 画图函数核心函数
-def plot_data_core(CarList_I, write_flag):
+def plot_data_core(CarList_I, write_flag=None, output_name=None):
     max_speed_length = 0
     max_acc_length = 0
     max_location_length = 0
@@ -192,8 +192,8 @@ def plot_data_core(CarList_I, write_flag):
     plt.savefig(out_png, dpi=300)
 
 # 画图的函数
-def plot_data(CarList_I, write_flag = None):
-    plot_data_core(CarList_I, write_flag = write_flag)
-    plt.show()
+def plot_data(CarList_I, write_flag = None, output_name=None):
+    plot_data_core(CarList_I, write_flag = write_flag, output_name=output_name)
+    # plt.show()
 
 # 存储画出的图像

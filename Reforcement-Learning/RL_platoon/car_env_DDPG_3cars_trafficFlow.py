@@ -10,9 +10,21 @@ MAX_CAR_NUMBER = 5  # 最大的车辆数目
 MIN_ACC = -4
 MAX_ACC = 3.0
 
+change_lane_speed_eps = 1   # 开始换道的速度误差（|speed-lane_max_v| <= 此误差时开始换道）
+finish_change_location_x_eps = 0.1  # 结束换道的横向间距误差
+change_lane_std_time = 5    # 标准的换道时间（秒）
+LEFT_LANE = 0
+MID_LANE = 1
+RIGHT_LANE = 2
+PREVIOUS_CAR_RANGE = 50 # 能探测到的前车的范围
+left_max_v = 70 / 3.6
+mid_max_v = 60 / 3.6
+right_max_v = 40 / 3.6
+
+
 STD_MAX_V = 60 / 3.6
 TURN_MAX_V = 4.2
-TIME_TAG_UP_BOUND = 120
+TIME_TAG_UP_BOUND = 5000    # 秒
 ROAD_LENGTH = STD_MAX_V * TIME_TAG_UP_BOUND
 CAR_LENGTH = 5
 LANE_WIDTH = 3.5
@@ -58,8 +70,8 @@ class lane(object):
 
 # define car
 class car(object):
-    def __init__(self, id, role, tar_interDis, tar_speed, init_speed=0.0, max_v = MAX_V,location=None, ingaged_in_platoon=None, leader=None,
-                 previousCar=None, car_length=None, run_test=True):
+    def __init__(self, id, role, tar_interDis, tar_speed, init_speed=0.0, max_v = STD_MAX_V,location=None, ingaged_in_platoon=None, leader=None,
+                 previousCar=None, car_length=None, run_test=True, init_lane=2):
         self.id = id
         self.role = role
         self.speed = init_speed
@@ -87,8 +99,12 @@ class car(object):
         self.speedData = []
         self.locationData = []
 
-        # 交通流参数
-        self.cur_lane = -1
+        # 横向换道的参数
+        self.start_change_lane = False
+        self.start_change_lane_time_tag = 0.0
+        self.acc_x = 0.0    # 横向的加速度
+        self.speed_x = 0.0      #横向的速度
+        self.cur_lane = init_lane
         self.to_lane = -1
         self.from_lane = -1
         self.location_x = 0.0
@@ -252,9 +268,26 @@ class car(object):
         if temp_a < self.acc:
             self.acc = temp_a
 
-    # 获取前车--为了简化起见，直接判断ID，目前假定车辆的是头车ID=0，然后后面的车依次递增
-    def __get_previous_car(self, CarList):
-        ''
+    # 获取前车
+    def __get_previous_car(self, CarList, vehicle_list=None):
+        # 通过查询vehicle_list获取距离最近的前车
+        if vehicle_list != None:
+            nearest_ix = -1
+            nearest_dist = ROAD_LENGTH
+            for th_ in range(len(vehicle_list)):
+                # 横向距离在半车道的范围内
+                if abs(vehicle_list[th_].location_x - self.location_x) <= LANE_WIDTH / 2:
+                    temp_dist = vehicle_list[th_].location[1] - self.location[1]
+                    # 纵向距离<=PREVIOUS_CAR_RANGE
+                    if 0 < temp_dist <= PREVIOUS_CAR_RANGE:
+                        if temp_dist < nearest_dist:
+                            nearest_dist = temp_dist
+                            nearest_ix = th_
+            if nearest_ix > -1:
+                return vehicle_list[nearest_ix]
+
+
+        # 如果在vehicle_list读不到前车时
         if self.id == CarList[0].id:
             return None
         else:
@@ -289,6 +322,21 @@ class car(object):
                     else:
                         self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.9)
 
+    # 获取当前lane的max_v
+    def __get_cur_lane_max_v(self, cur_lane):
+        temp_v = 0
+        if cur_lane == LEFT_LANE:
+            temp_v = left_max_v
+        elif cur_lane == MID_LANE:
+            temp_v = mid_max_v
+        elif cur_lane == RIGHT_LANE:
+            temp_v = right_max_v
+        else:
+            print("lane index error!!!!")
+            raise NameError
+        return temp_v
+
+
     # 构建多种跟驰算法组合的策略
     def __multi_strategy_selection(self, previous, action=None):
         changing_flag = 0  # 0-ACC, 1-Reinforcement learning
@@ -321,8 +369,9 @@ class car(object):
             self.acc = action  # 把输入的action当作下标，从动作空间中取值
         return changing_flag
 
+
     # 车辆运动学的主函数
-    def calculate(self, CarList, STRATEGY, time_tag, action=None):
+    def calculate(self, CarList, STRATEGY, time_tag, action=None, vehicle_list=None, lane_list=None):
         # 存储上次的数据
         self.accData.append(self.acc)
         self.speedData.append(self.speed)
@@ -349,7 +398,7 @@ class car(object):
                     car.__follow_car(self, None)
                 car.__test_scenario(self, test_method, time_tag)  # 因为__test_scenario包含了对是否到达测试地点的判断，所以需要在正常行驶的时候就检查一下
         elif self.role == 'follower':
-            precar = car.__get_previous_car(self, CarList)
+            precar = car.__get_previous_car(self, CarList, vehicle_list)
             if STRATEGY == 'RL':
                 # 如果运行reinforcement-learning
                 assert action, '在RL中输入的action为空'
@@ -401,14 +450,56 @@ class car(object):
         if self.acc > MAX_ACC:
             self.acc = MAX_ACC
 
+        ##### 横向的换道控制 #####
+        if self.role == 'leader':
+            cur_lane_max_v = car.__get_cur_lane_max_v(self, self.cur_lane)
+            if abs(cur_lane_max_v - self.speed) <= change_lane_speed_eps and self.cur_lane > LEFT_LANE:
+                # TODO:检测左边是不是有空
+                # 换道的初始化
+                if self.start_change_lane == False:
+                    self.to_lane = self.cur_lane - 1
+                    self.from_lane = self.cur_lane
+                    self.start_change_lane_time_tag = time_tag  # 记录换道开始的时刻，用来计算横向加速度
+                    self.start_change_lane = True
+                # 执行横向运动更新
+                time_interval = time_tag - self.start_change_lane_time_tag
+                self.acc_x = 2 * np.pi * LANE_WIDTH / (change_lane_std_time * change_lane_std_time) * np.sin(
+                    2 * np.pi * time_interval / change_lane_std_time)
+                self.acc = 0.0  # 换道时认为leader的纵向速度不变（TODO:尝试加速换道）
+                # 检测换道是不已经完成了
+                if abs(self.location_x-lane_list[self.to_lane].startx)<=finish_change_location_x_eps:
+                    self.acc_x = 0
+                    self.location_x = lane_list[self.to_lane].startx
+                    self.cur_lane = self.to_lane
+                    self.from_lane = self.cur_lane
+                    self.start_change_lane = False
+        else:
+            # 其他车辆的换道行为和leader完全同步
+            self.start_change_lane = CarList[0].start_change_lane
+            self.start_change_lane_time_tag = CarList[0].start_change_lane_time_tag
+            self.acc_x = CarList[0].acc_x
+            self.speed_x = CarList[0].speed_x
+            self.cur_lane = CarList[0].cur_lane
+            self.to_lane = CarList[0].to_lane
+            self.from_lane = CarList[0].from_lane
+            self.location_x = CarList[0].location_x
+
+
+
+
     # 更新车辆的运动学信息
     def update_car_info(self, time_per_dida_I):
         last_acc = self.accData[-1]
         last_speed = self.speedData[-1]
+        # 更新纵向的速度、位置
         self.speed = self.speed + time_per_dida_I * self.acc
         if self.speed <= 0:
             self.speed = 0
         self.location[1] = self.location[1] + self.speed * time_per_dida_I
+        # 更新横向的速度、位置
+        self.speed_x = self.speed_x + time_per_dida_I * self.acc_x
+        self.location_x = self.location_x + self.speed_x * time_per_dida_I
+
 
 
 ######################### car类相关的外部函数 #########################
