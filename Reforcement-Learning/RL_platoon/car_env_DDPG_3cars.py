@@ -10,10 +10,10 @@ MAX_CAR_NUMBER = 5  # 最大的车辆数目
 MIN_ACC = -4
 MAX_ACC = 3.0
 
-MAX_V = 60 / 3.6
+STD_MAX_V = 60 / 3.6
 TURN_MAX_V = 4.2
 TIME_TAG_UP_BOUND = 120
-ROAD_LENGTH = MAX_V * TIME_TAG_UP_BOUND
+ROAD_LENGTH = STD_MAX_V * TIME_TAG_UP_BOUND
 CAR_LENGTH = 5
 LANE_WIDTH = 3.5
 AI_DT = 0.2  # 信息决策的步长
@@ -23,7 +23,7 @@ START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 1.4
 EQUAL_TO_ZERO_SPEED = 0.2
 
 DES_PLATOON_INTER_DISTANCE = 5  # 车队的理想间距，单位是m
-INIT_CAR_DISTANCE = 20 + MAX_V/2  # 初始时车辆的间隔（原来的25）
+INIT_CAR_DISTANCE = 20 + STD_MAX_V/2  # 初始时车辆的间隔（原来的25）
 
 ROLE_SPACE = ['leader', 'follower']
 FOLLOW_STRATEGY = ['ACC', 'CACC', 'RL']
@@ -38,14 +38,33 @@ ACTION_DIM = 1
 ACTION_BOUND = [MIN_ACC, MAX_ACC]
 
 
+
+# 定义车道的class，仿真里面的车道是沿着y轴竖着放的
+class lane(object):
+    def __init__(self, id, startx, starty):
+        self.id = id
+        self.startx = startx
+        self.starty = starty
+        self.endx = self.startx
+        self.endy = ROAD_LENGTH
+        self.length = ROAD_LENGTH
+        self.width = LANE_WIDTH
+        self.lane_vehicle_list = []
+
+
+
+
+
+
 # define car
 class car(object):
-    def __init__(self, id, role, tar_interDis, tar_speed, init_speed=0.0 ,location=None, ingaged_in_platoon=None, leader=None,
-                 previousCar=None, car_length=None):
+    def __init__(self, id, role, tar_interDis, tar_speed, init_speed=0.0, max_v = MAX_V,location=None, ingaged_in_platoon=None, leader=None,
+                 previousCar=None, car_length=None, run_test=True):
         self.id = id
         self.role = role
         self.speed = init_speed
         self.acc = 0.0
+        self.max_v = max_v
         if not location:
             self.location = np.zeros((1, 2))
         else:
@@ -59,6 +78,7 @@ class car(object):
         self.length = CAR_LENGTH if not car_length else car_length
 
         # 构建测试环境
+        self.run_test = run_test # 是否运行测试
         self.start_test = False
         self.sin_wave_clock = 0.0
 
@@ -67,14 +87,18 @@ class car(object):
         self.speedData = []
         self.locationData = []
 
-
+        # 交通流参数
+        self.cur_lane = -1
+        self.to_lane = -1
+        self.from_lane = -1
+        self.location_x = 0.0
 
 
 
     # 用acc-speed curve做限幅
     def __engine_speed_up_acc_curve(self, speed, p):
         acc_max = MAX_ACC
-        v_max = MAX_V
+        v_max = self.max_v
         m = (v_max * p - v_max + v_max * sp.sqrt(1 - p)) / p
         k = (1 - p) * acc_max / m / m
         calcValue = -k * (speed - m) * (speed - m) + acc_max
@@ -83,7 +107,7 @@ class car(object):
     # 用acc-speed curve做限幅
     def __engine_slow_down_acc_curve(self, speed, p):
         acc_max = MAX_ACC
-        v_max = MAX_V
+        v_max = self.max_v
         m = v_max / (sp.sqrt(p) + 1)
         k = -MIN_ACC / m / m
         calcValue = k * (speed - m) * (speed - m) + MIN_ACC
@@ -91,7 +115,7 @@ class car(object):
 
     # 启动运行的函数
     def __excute_foward(self):
-        if self.speed >= MAX_V:
+        if self.speed >= self.max_v:
             self.acc = 0
         else:
             temp_a = car.__engine_speed_up_acc_curve(self, self.speed, p=0.3)
@@ -111,7 +135,7 @@ class car(object):
         v2 = previous.speed + AI_DT * previous.acc  # 前车的速度
         lam_para = 0.1
         epsilon = v1 - v2
-        T = DES_PLATOON_INTER_DISTANCE / (0.85 * MAX_V)
+        T = DES_PLATOON_INTER_DISTANCE / (0.85 * self.max_v)
 
         # 固定车头时距的跟驰方式
         sigma = -pure_interval + T * v1
@@ -159,8 +183,8 @@ class car(object):
             # 如果前车为空，说明自己是leader
             if (self.speed <= TURN_MAX_V):
                 temp_a = car.__engine_speed_up_acc_curve(self, self.speed, p=0.3)
-            elif (self.speed > MAX_V):
-                delta_v = np.abs(self.speed - MAX_V)
+            elif (self.speed > self.max_v):
+                delta_v = np.abs(self.speed - self.max_v)
                 temp_a = -car.__engine_speed_up_acc_curve(self, self.speed - delta_v, p=0.3) * 0.5
         else:
             v1 = self.speed  # 自己的速度
@@ -197,8 +221,8 @@ class car(object):
             # 如果前车为空，说明自己是leader
             if self.speed <= TURN_MAX_V:
                 temp_a = car.__engine_speed_up_acc_curve(self, self.speed, p=0.3)
-            elif self.speed > MAX_V:
-                delta_v = sp.abs(self.speed - MAX_V)
+            elif self.speed > self.max_v:
+                delta_v = sp.abs(self.speed - self.max_v)
                 temp_a = -car.__engine_speed_up_acc_curve(self, self.speed - delta_v, p=0.3) * 0.5
         else:
             v1 = self.speed  # 自己的速度
@@ -241,6 +265,11 @@ class car(object):
 
     # 构建测试场景
     def __test_scenario(self, TEST_SCENARIO, time_tag):
+        # 如果不运行'leader_sin_wave'及'leader_stop'测试
+        if self.run_test == False:
+            self.start_test = False
+            return
+
         if TEST_SCENARIO == 'leader_sin_wave':
             SIN_WAVE_A = 2.0
             SIN_WAVE_T = 8.0
@@ -373,7 +402,7 @@ class car(object):
             self.acc = MAX_ACC
 
     # 更新车辆的运动学信息
-    def update_car_info(self, time_per_dida_I, action=None):
+    def update_car_info(self, time_per_dida_I):
         last_acc = self.accData[-1]
         last_speed = self.speedData[-1]
         self.speed = self.speed + time_per_dida_I * self.acc
