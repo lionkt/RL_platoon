@@ -81,6 +81,7 @@ def plot_data_core(CarList_I, write_flag):
         label = 'leader' if single_car.role == 'leader' else 'car' + str(single_car.id + 1)
         data2 = np.array(data[1: ])
         data = np.array(data[ :-1])
+        data = data.reshape(np.shape(data2))
         if single_car.role == 'leader':
             plt.plot(np.arange(max_acc_length-1), (data2-data)/car_env_3_car.AI_DT, color=leader_color, linewidth=2)
         else:

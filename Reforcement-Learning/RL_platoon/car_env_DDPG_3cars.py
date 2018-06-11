@@ -8,9 +8,9 @@ MAX_CAR_NUMBER = 5  # 最大的车辆数目
 # MAX_ACC = 6.0
 ### Acceleration-Deceleration Behaviour of Various Vehicle Types论文的参数
 MIN_ACC = -4
-MAX_ACC = 2.5
+MAX_ACC = 3.0
 
-MAX_V = 60 / 3.6
+MAX_V = 90 / 3.6
 TURN_MAX_V = 4.2
 TIME_TAG_UP_BOUND = 120
 ROAD_LENGTH = MAX_V * TIME_TAG_UP_BOUND
@@ -22,7 +22,9 @@ UPDATE_TIME_PER_DIDA = 0.03  # 在c++版本的仿真平台的3D工程中，取�
 START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 1.4
 EQUAL_TO_ZERO_SPEED = 0.2
 
-DES_PLATOON_INTER_DISTANCE = 12.5  # 车队的理想间距，单位是m
+DES_PLATOON_INTER_DISTANCE = 15  # 车队的理想间距，单位是m
+INIT_CAR_DISTANCE = 20 + MAX_V/2  # 初始时车辆的间隔（原来的25）
+
 ROLE_SPACE = ['leader', 'follower']
 FOLLOW_STRATEGY = ['ACC', 'CACC', 'RL']
 
@@ -545,7 +547,7 @@ def get_reward_function(observation, post_jerk):
     r2 = 0.0
     r3 = 0.0
     r4 = 0.0
-    MAX_pure_distance = 20
+    MAX_pure_distance = DES_PLATOON_INTER_DISTANCE + 7.5
     MAX_pure_v = 3.5
     # 关于距离的reward
     if pure_interDistance <= DES_PLATOON_INTER_DISTANCE:
@@ -609,10 +611,10 @@ def reset(CarList):
     for single_car in CarList:
         if single_car.id == 0 or single_car.role == 'leader':
             obs_list.append(0)
-            obs_list.append(50)
+            obs_list.append(INIT_CAR_DISTANCE * 2)
         else:
             obs_list.append(0)
-            obs_list.append(50-i*25)
+            obs_list.append(INIT_CAR_DISTANCE)
         i += 1
     leader_v = obs_list[0]
     leader_y = obs_list[1]

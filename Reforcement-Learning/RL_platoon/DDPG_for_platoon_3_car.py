@@ -28,19 +28,19 @@ import plot_train as train_plot
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-np.random.seed(1)
-tf.set_random_seed(1)
+# np.random.seed(1)
+# tf.set_random_seed(1)
 
-MAX_EPISODES = 1200  # 1200
+MAX_EPISODES = 900  # 1200
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
 LR_C = 1e-4  # learning rate for critic
-GAMMA = 0.999  # reward discount， original 0.999
+GAMMA = 0.99  # reward discount， original 0.999
 REPLACE_ITER_A = 1100
 REPLACE_ITER_C = 1000
 MEMORY_CAPACITY = 10000
 BATCH_SIZE = 128     # 32 get better output than 16
-VAR_MIN = 0.01       # 0.05
+VAR_MIN = 0.005       # 0.05
 
 
 LOAD = False
@@ -48,7 +48,7 @@ LOAD = False
 OUTPUT_GRAPH = True
 # USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
 USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
-INIT_CAR_DISTANCE = 25  # 初始时车辆的间隔
+INIT_CAR_DISTANCE = car_env.INIT_CAR_DISTANCE  # 初始时车辆的间隔
 
 
 STATE_DIM = car_env.STATE_DIM
@@ -200,6 +200,9 @@ class Memory(object):
         return self.data[indices, :]
 
 
+config = tf.ConfigProto()
+# config.gpu_options.allow_growth = True
+config.gpu_options.per_process_gpu_memory_fraction = 0.4  # 至少一块卡上留70%的显存，保证5个进程能跑起来
 sess = tf.Session()
 
 # Create actor and critic for 2-car following.
