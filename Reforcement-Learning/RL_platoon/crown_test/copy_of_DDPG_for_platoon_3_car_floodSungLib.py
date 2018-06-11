@@ -9,7 +9,7 @@ import os
 gc.enable()
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 # set random seed
 # np.random.seed(1)
@@ -17,10 +17,12 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 # hyper params
-MAX_EPISODES = 800 # 3000
+MAX_EPISODES = 900 # 3000
 var = 2.5  # control exploration, original 2.5
 var_damp = 0.99996  # var damping ratio, original 0.99995
+# INIT_CAR_DISTANCE = 25  # 初始时车辆的间隔
 INIT_CAR_DISTANCE = 20 + car_env.MAX_V/2  # 初始时车辆的间隔（原来的25）
+
 TEST = 10
 
 

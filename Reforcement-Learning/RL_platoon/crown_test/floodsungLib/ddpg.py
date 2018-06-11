@@ -19,7 +19,7 @@ from .replay_buffer import ReplayBuffer
 REPLAY_BUFFER_SIZE = 50000
 REPLAY_START_SIZE = 10000
 BATCH_SIZE = 256
-GAMMA = 0.9995
+GAMMA = 0.99       # 0.997
 VAR_MIN = 0.005       # 0.05
 
 # network hyper-parameters
