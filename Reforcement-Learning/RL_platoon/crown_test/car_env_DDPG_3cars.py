@@ -7,10 +7,10 @@ MAX_CAR_NUMBER = 5  # 最大的车辆数目
 # MIN_ACC = -10.0
 # MAX_ACC = 6.0
 ### Acceleration-Deceleration Behaviour of Various Vehicle Types论文的参数
-MIN_ACC = -5    #4
+MIN_ACC = -4    #4
 MAX_ACC = 3   #2.5
 
-MAX_V = 90 / 3.6    # 60 / 3.6
+MAX_V = 60 / 3.6    # 60 / 3.6
 TURN_MAX_V = 4.2
 TIME_TAG_UP_BOUND = 120
 ROAD_LENGTH = MAX_V * TIME_TAG_UP_BOUND
@@ -23,7 +23,7 @@ START_LEADER_TEST_DISTANCE = ROAD_LENGTH / 1.4
 EQUAL_TO_ZERO_SPEED = 0.2
 
 INIT_CAR_DISTANCE = 20 + MAX_V/2  # 初始时车辆的间隔（原来的25）
-DES_PLATOON_INTER_DISTANCE = 15  # 车队的理想间距，单位是m
+DES_PLATOON_INTER_DISTANCE = 5  # 车队的理想间距，单位是m
 ROLE_SPACE = ['leader', 'follower']
 FOLLOW_STRATEGY = ['ACC', 'CACC', 'RL']
 
@@ -352,7 +352,7 @@ class car(object):
         if self.role == 'follower':
             alpha_2 = 0.0
             if STRATEGY == 'RL':
-                alpha_2 = 0.61 # 0.61(train)  # 0.635(eval)
+                alpha_2 = 0.60 # 0.61(train)  # 0.635(eval)
             # if strategy_flag == 1:  # 到达了multi-strategy的切换点
             #     alpha_2 = 0.8
             self.acc = alpha_2 * old_acc + (1 - alpha_2) * self.acc
@@ -509,29 +509,57 @@ def get_reward_table(observation):
     # follower_y = observation[3]
     # pure_interDistance = leader_y - follower_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
     # delta_v = leader_v - follower_v
-    delta_v = observation[0]
-    pure_interDistance = observation[1]
+
+    delta_v = observation[0] #(f1-f2)
+    pure_interDistance = observation[1] #(f1-f2)
+    # if np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) <= 0.1 * DES_PLATOON_INTER_DISTANCE:
+    #     return 50
+    # elif np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) <= 0.2 * DES_PLATOON_INTER_DISTANCE:
+    #     return 20
+    # elif pure_interDistance <= DES_PLATOON_INTER_DISTANCE and pure_interDistance > DES_PLATOON_INTER_DISTANCE / 7:
+    #     if delta_v <= 0:
+    #         return -35
+    #     else:
+    #         return 0.5
+    # elif pure_interDistance <= DES_PLATOON_INTER_DISTANCE / 6:
+    #     return -40
+    # elif pure_interDistance > 1.2 * DES_PLATOON_INTER_DISTANCE and pure_interDistance < 6 * DES_PLATOON_INTER_DISTANCE:
+    #     if delta_v <= 0:
+    #         return 0.5
+    #     else:
+    #         return -15
+    # else:
+    #     if delta_v <= 0:
+    #         return 0.5
+    #     else:
+    #         return -20
+
+    # modify params (2018/6/12 for TRC reviewer)
     if np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) <= 0.1 * DES_PLATOON_INTER_DISTANCE:
         return 50
     elif np.abs(pure_interDistance - DES_PLATOON_INTER_DISTANCE) <= 0.2 * DES_PLATOON_INTER_DISTANCE:
-        return 20
-    elif pure_interDistance <= DES_PLATOON_INTER_DISTANCE and pure_interDistance > DES_PLATOON_INTER_DISTANCE / 7:
+        return 5
+    elif pure_interDistance <= DES_PLATOON_INTER_DISTANCE and pure_interDistance > DES_PLATOON_INTER_DISTANCE / 5:
         if delta_v <= 0:
-            return -35
+            return -5
         else:
-            return 0.5
-    elif pure_interDistance <= DES_PLATOON_INTER_DISTANCE / 6:
-        return -40
-    elif pure_interDistance > 1.2 * DES_PLATOON_INTER_DISTANCE and pure_interDistance < 6 * DES_PLATOON_INTER_DISTANCE:
+            return 1
+    elif pure_interDistance <= DES_PLATOON_INTER_DISTANCE / 5:
+        return -100
+    elif pure_interDistance > DES_PLATOON_INTER_DISTANCE and pure_interDistance < 5 * DES_PLATOON_INTER_DISTANCE:
+        if delta_v <= 0:
+            return 1
+        else:
+            return -1
+    elif pure_interDistance >= 5 * DES_PLATOON_INTER_DISTANCE:
         if delta_v <= 0:
             return 0.5
         else:
-            return -15
+            return -100
     else:
-        if delta_v <= 0:
-            return 0.5
-        else:
-            return -20
+        return 0
+
+
 
 
 # reward计算方法2：计算单步的奖励
