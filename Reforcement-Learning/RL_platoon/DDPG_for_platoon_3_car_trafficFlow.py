@@ -48,7 +48,7 @@ VAR_MIN = 0.005       # 0.05
 LOAD = True
 
 CHANGE_LANE_USE_RL = True   # 换道场景中使用RL
-# CHANGE_LANE_USE_RL = False   # 换道场景中使用RL
+# CHANGE_LANE_USE_RL = False   # 换道场景中不使用RL
 
 OUTPUT_GRAPH = True
 # USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
@@ -57,8 +57,12 @@ INIT_CAR_DISTANCE = car_env.INIT_CAR_DISTANCE  # 初始时车辆的间隔
 
 
 output_file_name = './OutputImg/change_lane_scenario_data.txt'
+output_platoon_spacing_name = './OutputImg/platoon_spacing.txt'
 output_file = open(output_file_name, 'w')
+output_platoon_spacing_file = open(output_platoon_spacing_name, 'w')
 output_title_flag = False
+output_platoon_title_flag = False
+
 
 STATE_DIM = car_env.STATE_DIM
 ACTION_DIM = car_env.ACTION_DIM
@@ -564,10 +568,38 @@ def eval_trafficFlow():
             # 找到跑的最远的车
             if vehicle_list[th_].location[1] > farest_car_location_y:
                 farest_car_location_y = vehicle_list[th_].location[1]
+        # 输出platoon内部的间距变化
+        global output_platoon_title_flag
+        global output_platoon_spacing_file
+        if output_platoon_title_flag == False:
+            output_platoon_title_flag = True
+            output_platoon_spacing_file.write('*********************************************************************************' + '\n')
+            output_platoon_spacing_file.write('TIME_TAG_UP_BOUND%.2f' % car_env.TIME_TAG_UP_BOUND + '\n')
+            if CHANGE_LANE_USE_RL == True:
+                output_platoon_spacing_file.write('CHANGE_LANE_USE_RL = True' + '\n')
+            else:
+                output_platoon_spacing_file.write('CHANGE_LANE_USE_RL = False' + '\n')
+            output_platoon_spacing_file.write('Format: time_tag,platoon_id,mean_interval' + '\n')
+            output_platoon_spacing_file.write('Car lenght: 5m, lane width: 3.5m\n')
+            output_platoon_spacing_file.write('*********************************************************************************' + '\n')
+
+        for th_ in range(len(CarList_list)):
+            temp_carlist = CarList_list[th_]
+            temp_mean_spacing = 0
+            if len(temp_carlist) > 1:
+                for i in range(len(temp_carlist)-1):
+                    temp_mean_spacing += (temp_carlist[i].location[1]-temp_carlist[i+1].location[1])
+                temp_mean_spacing = temp_mean_spacing/(len(temp_carlist)-1)
+                # 输出队列内部平均间隔
+                oneline = '%.2f' % time_tag + ',%d' % th_ + ',%.2f'%temp_mean_spacing
+                output_platoon_spacing_file.write(oneline + '\n')
+
+
         print('Now time: %.2f' %time_tag + ', farest car location_y: %.2f' % farest_car_location_y)
         ###### 有强化学习的车跑到了终点，结束仿真 ######
         if finish_flag:
             # output_file.write('============== Finish info:' + finish_info + '============== ')
+            output_platoon_spacing_file.close()
             output_file.close()
             break
 
