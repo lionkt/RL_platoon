@@ -46,6 +46,10 @@ VAR_MIN = 0.005       # 0.05
 
 # LOAD = False
 LOAD = True
+
+CHANGE_LANE_USE_RL = True   # 换道场景中使用RL
+# CHANGE_LANE_USE_RL = False   # 换道场景中使用RL
+
 OUTPUT_GRAPH = True
 # USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
 USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
@@ -208,7 +212,7 @@ class Memory(object):
 config = tf.ConfigProto()
 # config.gpu_options.allow_growth = True
 config.gpu_options.per_process_gpu_memory_fraction = 0.4  # 至少一块卡上留70%的显存，保证5个进程能跑起来
-sess = tf.Session()
+sess = tf.Session(config=config)
 
 # Create actor and critic for 2-car following.
 actor = Actor(sess, ACTION_DIM, ACTION_BOUND[1], LR_A, REPLACE_ITER_A)
@@ -490,28 +494,34 @@ def eval_trafficFlow():
                                                    action=None, vehicle_list=vehicle_list, lane_list=lane_list)  # 先算第二辆
             else:
                 # 含有3个及以上的车的list
-                CarList_list[list_th][0].calculate(CarList_list[list_th][0], STRATEGY='ACC', time_tag=time_tag,
-                                                   action=None, vehicle_list=vehicle_list, lane_list=lane_list)  # 先算头车
-                CarList_list[list_th][1].calculate(CarList_list[list_th][0:2], STRATEGY='ACC', time_tag=time_tag,
-                                                   action=None, vehicle_list=vehicle_list, lane_list=lane_list)  # 先算第二辆
-                for car_index in range(len(CarList_list[list_th])):
-                    if car_index <= 1:
-                        continue
-                    if car_index == 2:
-                        temp_list = []  # 3辆车的数组
-                        temp_list.append(CarList_list[list_th][car_index - 2])
-                        temp_list.append(CarList_list[list_th][car_index - 1])
-                        temp_list.append(CarList_list[list_th][car_index])
-                    elif car_index >= 3:
-                        temp_list = []  # 3辆车的数组
-                        temp_list.append(CarList_list[list_th][0])
-                        temp_list.append(CarList_list[list_th][car_index - 1])
-                        temp_list.append(CarList_list[list_th][car_index])
-                    s, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 先读取一下当前的状态
-                    a = actor.choose_action(s)  # 根据当前状态，从训练好的网络选择动作
-                    temp_list[2].calculate(temp_list, STRATEGY='RL', time_tag=time_tag, action=a,
-                                           vehicle_list=vehicle_list, lane_list=lane_list)  # 将输入的动作用于运算
-                    s_, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 更新一下当前的状态
+                if CHANGE_LANE_USE_RL:  # 使用RL方法
+                    CarList_list[list_th][0].calculate(CarList_list[list_th][0], STRATEGY='ACC', time_tag=time_tag,
+                                                       action=None, vehicle_list=vehicle_list, lane_list=lane_list)  # 先算头车
+                    CarList_list[list_th][1].calculate(CarList_list[list_th][0:2], STRATEGY='ACC', time_tag=time_tag,
+                                                       action=None, vehicle_list=vehicle_list, lane_list=lane_list)  # 先算第二辆
+                    for car_index in range(len(CarList_list[list_th])):
+                        if car_index <= 1:
+                            continue
+                        if car_index == 2:
+                            temp_list = []  # 3辆车的数组
+                            temp_list.append(CarList_list[list_th][car_index - 2])
+                            temp_list.append(CarList_list[list_th][car_index - 1])
+                            temp_list.append(CarList_list[list_th][car_index])
+                        elif car_index >= 3:
+                            temp_list = []  # 3辆车的数组
+                            temp_list.append(CarList_list[list_th][0])
+                            temp_list.append(CarList_list[list_th][car_index - 1])
+                            temp_list.append(CarList_list[list_th][car_index])
+                        s, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 先读取一下当前的状态
+                        a = actor.choose_action(s)  # 根据当前状态，从训练好的网络选择动作
+                        temp_list[2].calculate(temp_list, STRATEGY='RL', time_tag=time_tag, action=a,
+                                               vehicle_list=vehicle_list, lane_list=lane_list)  # 将输入的动作用于运算
+                        s_, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 更新一下当前的状态
+                elif CHANGE_LANE_USE_RL == False:   # 不适用RL方法
+                    for j in range(len(CarList_list[list_th])):
+                        CarList_list[list_th][j].calculate(CarList_list[list_th][0:j+1], STRATEGY='ACC',
+                                                           time_tag=time_tag, action=None,
+                                                           vehicle_list=vehicle_list, lane_list=lane_list)  # 先算第二辆
 
             # 信息更新
             turns = 0
@@ -520,9 +530,10 @@ def eval_trafficFlow():
                 turns += car_env.UPDATE_TIME_PER_DIDA
 
             # 判断仿真是否结束
+            if time_tag >= car_env.TIME_TAG_UP_BOUND:
+                done = True
             if done:
                 finish_flag = True
-                finish_info = info
 
         ###### 开始输出计算的结果 ######
         global output_title_flag
@@ -532,6 +543,14 @@ def eval_trafficFlow():
             output_title_flag = True
             output_file.write('*********************************************************************************'+'\n')
             output_file.write('Output Format: time_tag,ID,x,y,v_x,v_y,max_v,acc_x,acc_y,cur_lane,from_lane,to_lane' + '\n')
+            output_file.write('TIME_TAG_UP_BOUND%.2f' % car_env.TIME_TAG_UP_BOUND + '\n')
+            if CHANGE_LANE_USE_RL==True:
+                output_file.write('CHANGE_LANE_USE_RL = True' + '\n')
+            else:
+                output_file.write('CHANGE_LANE_USE_RL = False' + '\n')
+
+            output_file.write(
+                'left_max:%.2f' % car_env.left_max_v + ',mid_max:%.2f' % car_env.mid_max_v + ',right_max:%.2f' % car_env.right_max_v + '\n')
             output_file.write('Car lenght: 5m, lane width: 3.5m\n')
             output_file.write('*********************************************************************************'+'\n')
         for th_ in range(len(vehicle_list)):
