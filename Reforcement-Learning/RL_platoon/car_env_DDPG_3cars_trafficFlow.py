@@ -17,14 +17,14 @@ LEFT_LANE = 0
 MID_LANE = 1
 RIGHT_LANE = 2
 PREVIOUS_CAR_RANGE = 50 # 能探测到的前车的范围
-left_max_v = 70 / 3.6
+left_max_v = 80 / 3.6
 mid_max_v = 60 / 3.6
 right_max_v = 40 / 3.6
 
 
 STD_MAX_V = 60 / 3.6
 TURN_MAX_V = 4.2
-TIME_TAG_UP_BOUND = 5000    # 秒
+TIME_TAG_UP_BOUND = 500    # 秒
 ROAD_LENGTH = STD_MAX_V * TIME_TAG_UP_BOUND
 CAR_LENGTH = 5
 LANE_WIDTH = 3.5
@@ -70,7 +70,7 @@ class lane(object):
 
 # define car
 class car(object):
-    def __init__(self, id, role, tar_interDis, tar_speed, init_speed=0.0, max_v = STD_MAX_V,location=None, ingaged_in_platoon=None, leader=None,
+    def __init__(self, id, role, tar_interDis, tar_speed, init_location_x, init_speed=0.0, max_v = STD_MAX_V,location=None, ingaged_in_platoon=None, leader=None,
                  previousCar=None, car_length=None, run_test=True, init_lane=2):
         self.id = id
         self.role = role
@@ -107,7 +107,7 @@ class car(object):
         self.cur_lane = init_lane
         self.to_lane = -1
         self.from_lane = -1
-        self.location_x = 0.0
+        self.location_x = init_location_x
 
 
 
@@ -468,11 +468,13 @@ class car(object):
                 self.acc = 0.0  # 换道时认为leader的纵向速度不变（TODO:尝试加速换道）
                 # 检测换道是不已经完成了
                 if abs(self.location_x-lane_list[self.to_lane].startx)<=finish_change_location_x_eps:
-                    self.acc_x = 0
+                    self.acc_x = 0.0
+                    self.speed_x = 0.0
                     self.location_x = lane_list[self.to_lane].startx
                     self.cur_lane = self.to_lane
                     self.from_lane = self.cur_lane
                     self.start_change_lane = False
+                    self.max_v = car.__get_cur_lane_max_v(self, self.cur_lane)
         else:
             # 其他车辆的换道行为和leader完全同步
             self.start_change_lane = CarList[0].start_change_lane
@@ -483,8 +485,7 @@ class car(object):
             self.to_lane = CarList[0].to_lane
             self.from_lane = CarList[0].from_lane
             self.location_x = CarList[0].location_x
-
-
+            self.max_v = car.__get_cur_lane_max_v(self, self.cur_lane)
 
 
     # 更新车辆的运动学信息
@@ -498,7 +499,7 @@ class car(object):
         self.location[1] = self.location[1] + self.speed * time_per_dida_I
         # 更新横向的速度、位置
         self.speed_x = self.speed_x + time_per_dida_I * self.acc_x
-        self.location_x = self.location_x + self.speed_x * time_per_dida_I
+        self.location_x = self.location_x - self.speed_x * time_per_dida_I
 
 
 

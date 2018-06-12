@@ -52,6 +52,10 @@ USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
 INIT_CAR_DISTANCE = car_env.INIT_CAR_DISTANCE  # 初始时车辆的间隔
 
 
+output_file_name = './OutputImg/change_lane_scenario_data.txt'
+output_file = open(output_file_name, 'w')
+output_title_flag = False
+
 STATE_DIM = car_env.STATE_DIM
 ACTION_DIM = car_env.ACTION_DIM
 ACTION_BOUND = car_env.ACTION_BOUND
@@ -396,7 +400,7 @@ def eval():
 
 def eval_trafficFlow():
     # 控制常数
-    PLATOON_GEN_TIME_INTERVAL = 5  # 间隔多少秒生成一个platoon
+    PLATOON_GEN_TIME_INTERVAL = 20  # 间隔多少秒生成一个platoon
     left_max_v = car_env.left_max_v
     mid_max_v = car_env.mid_max_v
     right_max_v = car_env.right_max_v
@@ -414,52 +418,64 @@ def eval_trafficFlow():
 
     time_tag = 0.0
     done = False
+    finish_flag = False
+    finish_info = ''
     last_gen_time_tag = 0.0
     while True:
         ###### 时间戳更新
         time_tag += car_env.AI_DT
         ###### 间隔到了，开始生产车队 ######
         if time_tag - last_gen_time_tag >= PLATOON_GEN_TIME_INTERVAL:
-            # 生成车道
-            # lane_index = random.randint(0, len(lane_list) - 1)    # 随机在不同的车道生成（未完成）
-            lane_index = len(lane_list)-1   # 只在最右边的车道生成，然后加速到车道允许的上限后，才能换道
-            # 生成随机数作为platoon的长度
-            mu = 3
-            sigma = 1
-            temp_car_num = np.random.normal(mu, sigma, 1)
-            temp_car_num = np.round(temp_car_num)
-            temp_car_num = temp_car_num if temp_car_num <= 5 else 5     # 至多产生5辆车
-            temp_car_num = temp_car_num if temp_car_num >=1 else 1      # 至少产生1辆车
-            temp_car_num = int(temp_car_num)
-            # 根据生成的随机数构建车队
-            temp_lane_max_v = 0.0
-            if lane_index == 0:
-                temp_lane_max_v = left_max_v
-            elif lane_index==1:
-                temp_lane_max_v=mid_max_v
-            elif lane_index==2:
-                temp_lane_max_v=right_max_v
-            else:
-                print("lane index error!!!!")
-                raise NameError
-            temp_car_list = []
-            for th_ in range(temp_car_num):
-                if th_ == 0:
-                    single_car = car_env.car(id=vehicle_valid_id, role='leader',
-                                             tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=temp_lane_max_v,
-                                             init_speed=0.0, max_v=temp_lane_max_v, location=[0, 0],
-                                             ingaged_in_platoon=True, run_test=False, init_lane=lane_index)
+            # 检测能否生成platoon（避撞的考虑）
+            min_location_y = car_env.ROAD_LENGTH
+            for th_ in range(len(vehicle_list)):
+                if vehicle_list[th_].location[1] < min_location_y:
+                    min_location_y = vehicle_list[th_].location[1]
+            # 如果最靠近起点的一个车，距离起点也有min_location_y
+            if min_location_y >= car_env.INIT_CAR_DISTANCE:
+                # 生成车道
+                # lane_index = random.randint(0, len(lane_list) - 1)    # 随机在不同的车道生成（未完成）
+                lane_index = len(lane_list)-1   # 只在最右边的车道生成，然后加速到车道允许的上限后，才能换道
+                # 生成随机数作为platoon的长度
+                mu = 3
+                sigma = 1
+                temp_car_num = np.random.normal(mu, sigma, 1)
+                temp_car_num = np.round(temp_car_num)
+                temp_car_num = temp_car_num if temp_car_num <= 5 else 5     # 至多产生5辆车
+                temp_car_num = temp_car_num if temp_car_num >=1 else 1      # 至少产生1辆车
+                temp_car_num = int(temp_car_num)
+                # 根据生成的随机数构建车队
+                temp_lane_max_v = 0.0
+                if lane_index == 0:
+                    temp_lane_max_v = left_max_v
+                elif lane_index==1:
+                    temp_lane_max_v=mid_max_v
+                elif lane_index==2:
+                    temp_lane_max_v=right_max_v
                 else:
-                    single_car = car_env.car(id=vehicle_valid_id, role='follower',
-                                             tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE, tar_speed=temp_lane_max_v,
-                                             init_speed=0.0, max_v=temp_lane_max_v,
-                                             location=[0, -car_env.INIT_CAR_DISTANCE * th_],
-                                             ingaged_in_platoon=True, run_test=False, init_lane=lane_index)
-                vehicle_valid_id +=1
-                vehicle_list.append(single_car)
-                temp_car_list.append(single_car)
-            # 完成了一个车队的生成
-            CarList_list.append(temp_car_list)
+                    print("lane index error!!!!")
+                    raise NameError
+                temp_car_list = []
+                for th_ in range(temp_car_num):
+                    init_location_x = lane_list[lane_index].startx
+                    if th_ == 0:
+                        single_car = car_env.car(id=vehicle_valid_id, role='leader',
+                                                 tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                                                 tar_speed=temp_lane_max_v, init_location_x=init_location_x,
+                                                 init_speed=0.0, max_v=temp_lane_max_v, location=[0, 0],
+                                                 ingaged_in_platoon=True, run_test=False, init_lane=lane_index)
+                    else:
+                        single_car = car_env.car(id=vehicle_valid_id, role='follower',
+                                                 tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+                                                 tar_speed=temp_lane_max_v, init_location_x=init_location_x,
+                                                 init_speed=0.0, max_v=temp_lane_max_v,
+                                                 location=[0, -car_env.INIT_CAR_DISTANCE * th_],
+                                                 ingaged_in_platoon=True, run_test=False, init_lane=lane_index)
+                    vehicle_valid_id +=1
+                    vehicle_list.append(single_car)
+                    temp_car_list.append(single_car)
+                # 完成了一个车队的生成
+                CarList_list.append(temp_car_list)
         ###### 开始运动学计算 ######
         for list_th in range(len(CarList_list)):
             if len(CarList_list[list_th]) == 1:
@@ -505,7 +521,37 @@ def eval_trafficFlow():
 
             # 判断仿真是否结束
             if done:
-                break
+                finish_flag = True
+                finish_info = info
+
+        ###### 开始输出计算的结果 ######
+        global output_title_flag
+        global output_file
+        farest_car_location_y = 0.0
+        if output_title_flag == False:
+            output_title_flag = True
+            output_file.write('*********************************************************************************'+'\n')
+            output_file.write('Output Format: time_tag,ID,x,y,v_x,v_y,max_v,acc_x,acc_y,cur_lane,from_lane,to_lane' + '\n')
+            output_file.write('Car lenght: 5m, lane width: 3.5m\n')
+            output_file.write('*********************************************************************************'+'\n')
+        for th_ in range(len(vehicle_list)):
+            oneline = '%.2f' % time_tag + ',%d' % vehicle_list[th_].id + ',%.2f' % vehicle_list[
+                th_].location_x + ',%.2f' % vehicle_list[th_].location[1] + ',%.2f' % vehicle_list[
+                          th_].speed_x + ',%.2f' % vehicle_list[th_].speed + ',%.2f' % vehicle_list[
+                          th_].max_v + ',%.2f' % vehicle_list[th_].acc_x + ',%.2f' % vehicle_list[th_].acc + ',%d' % \
+                      vehicle_list[th_].cur_lane + ',%d' % vehicle_list[th_].from_lane + ',%d' % vehicle_list[
+                          th_].to_lane
+            output_file.write(oneline + '\n')
+            # 找到跑的最远的车
+            if vehicle_list[th_].location[1] > farest_car_location_y:
+                farest_car_location_y = vehicle_list[th_].location[1]
+        print('Now time: %.2f' %time_tag + ', farest car location_y: %.2f' % farest_car_location_y)
+        ###### 有强化学习的车跑到了终点，结束仿真 ######
+        if finish_flag:
+            # output_file.write('============== Finish info:' + finish_info + '============== ')
+            output_file.close()
+            break
+
 
 
 
@@ -523,59 +569,6 @@ def CarList_update_platoon_info(Carlist, des_platoon_size, build_platoon):
         for single_car in Carlist:
             single_car.engaged_in_platoon = True
 
-
-# 采用两种或以上的跟驰策略进行组合
-def multi_strategy_eval():
-    Carlist = []
-    # 每个episode都要reset一下
-    Carlist.clear()
-    time_tag = 0.0
-    car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, 75])
-    car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, 50])
-    car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, 25])
-    car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, 0])
-    # 将新车加入车队
-    if len(Carlist) == 0:
-        Carlist.append(car1)
-        Carlist.append(car2)
-        Carlist.append(car3)
-        Carlist.append(car4)
-
-    s = car_env.reset(Carlist)
-    while True:
-        # 时间戳更新
-        time_tag += car_env.AI_DT
-
-        # 多车同时加入仿真的计算
-        done = False
-        CarList_update_platoon_info(Carlist, des_platoon_size=4, build_platoon=True)  # 组建车队
-        Carlist[0].calculate(Carlist[0], STRATEGY='RL', time_tag=time_tag, action=None)  # 先算头车，头车走自己的路，不受RL控制
-        for pre_car_index in range(len(Carlist) - 1):
-            temp_list = []  # 只存了两辆车的数组，专门针对RL训练出的双车跟驰模型
-            temp_list.append(Carlist[pre_car_index])
-            temp_list.append(Carlist[pre_car_index + 1])
-            s, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 先读取一下当前的状态
-            a = actor.choose_action(s)  # 根据当前状态，从训练好的网络选择动作
-
-            # temp_list[1].calculate(Carlist, STRATEGY='MULTI', time_tag=time_tag, action=a)  # 将输入的动作用于运算
-            temp_list[1].calculate(Carlist, STRATEGY='RL', time_tag=time_tag, action=a)  # 将输入的动作用于运算
-            s_, done, info = car_env.get_obs_done_info(temp_list, time_tag)  # 更新一下当前的状态
-
-        # 信息更新
-        turns = 0
-        while turns <= car_env.AI_DT:
-            car_env.CarList_update_info_core(Carlist, car_env.UPDATE_TIME_PER_DIDA)
-            turns += car_env.UPDATE_TIME_PER_DIDA
-
-        # 判断仿真是否结束
-        if done:
-            break
-
-    my_plot.plot_data(Carlist, write_flag=True)
 
 
 def conventional_follow(STRATRGY):
