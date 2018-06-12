@@ -23,8 +23,8 @@ var_damp = 0.99996  # var damping ratio, original 0.99995
 TEST = 10
 
 
-LOAD_NN = False
-# LOAD_NN = True
+# LOAD_NN = False
+LOAD_NN = True
 OUTPUT_GRAPH = True
 # USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
 USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
