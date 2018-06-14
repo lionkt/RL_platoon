@@ -24,6 +24,7 @@ import shutil
 import car_env_DDPG_3cars as car_env
 import plot_funcion as my_plot
 import plot_train as train_plot
+import time
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
@@ -34,7 +35,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 MAX_EPISODES = 900  # 1200
 # MAX_EP_STEPS = 200
 LR_A = 1e-4  # learning rate for actor
-LR_C = 1e-4  # learning rate for critic
+LR_C = 1e-3  # learning rate for critic
 GAMMA = 0.99  # reward discount， original 0.999
 REPLACE_ITER_A = 1100
 REPLACE_ITER_C = 1000
@@ -46,9 +47,14 @@ VAR_MIN = 0.005       # 0.05
 # LOAD = False
 LOAD = True
 OUTPUT_GRAPH = True
+
 # USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
 USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
 INIT_CAR_DISTANCE = car_env.INIT_CAR_DISTANCE  # 初始时车辆的间隔
+
+
+output_file_name = './OutputImg/singe_decision_calculateTime.txt'
+output_file = open(output_file_name,'w')
 
 
 STATE_DIM = car_env.STATE_DIM
@@ -328,30 +334,36 @@ def eval():
     Carlist.clear()
     time_tag = 0.0
     temp_init_speed = 0.0 / 3.6
-    car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=True, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, init_speed=temp_init_speed, location=[0, INIT_CAR_DISTANCE*3])
-    car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=True, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, init_speed=temp_init_speed, location=[0, INIT_CAR_DISTANCE*2])
-    car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=True, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, init_speed=temp_init_speed, location=[0, INIT_CAR_DISTANCE])
-    car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=True, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, init_speed=temp_init_speed, location=[0, 0])
-    car5 = car_env.car(id=4, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    car5 = car_env.car(id=4, role='follower', ingaged_in_platoon=True, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
                        tar_speed=60.0 / 3.6, init_speed=temp_init_speed, location=[0, -INIT_CAR_DISTANCE])
+    # car6 = car_env.car(id=5, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
+    #                    tar_speed=60.0 / 3.6, init_speed=temp_init_speed, location=[0, -INIT_CAR_DISTANCE*2])
     # 将新车加入车队
     if len(Carlist) == 0:
         Carlist.append(car1)
         Carlist.append(car2)
         Carlist.append(car3)
         Carlist.append(car4)
-        # Carlist.append(car5)
-    CarList_update_platoon_info(Carlist, des_platoon_size=len(Carlist), build_platoon=True)  # 把车辆加入车队
+        Carlist.append(car5)
+        # Carlist.append(car6)
+    # CarList_update_platoon_info(Carlist, des_platoon_size=len(Carlist), build_platoon=True)  # 把车辆加入车队
 
     s = car_env.reset(Carlist)
     done = False
+    global output_file
     while True:
         # 时间戳更新
         time_tag += car_env.AI_DT
+
+        t_start = time.time()
 
         # 多车同时加入仿真的计算
         Carlist[0].calculate(Carlist[0], STRATEGY='ACC', time_tag=time_tag, action=None)  # 先算头车
@@ -380,8 +392,16 @@ def eval():
             car_env.CarList_update_info_core(Carlist, car_env.UPDATE_TIME_PER_DIDA)
             turns += car_env.UPDATE_TIME_PER_DIDA
 
+        t_end = time.time()
+
+
+        # 输出计算的时间
+        oneline = '%f' % time_tag + ',%f' % (t_end - t_start)
+        output_file.write(oneline + '\n')
+
         # 判断仿真是否结束
         if done:
+            output_file.close()
             break
 
     my_plot.plot_data(Carlist, write_flag=True)
@@ -460,16 +480,17 @@ def conventional_follow(STRATRGY):
     # 每个episode都要reset一下
     Carlist.clear()
     time_tag = 0.0
+    temp_init_speed = 0.0 / 3.6
     car1 = car_env.car(id=0, role='leader', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, 75])
+                       tar_speed=60.0 / 3.6, init_speed=temp_init_speed, location=[0, 75])
     car2 = car_env.car(id=1, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, 50])
+                       tar_speed=60.0 / 3.6, init_speed=temp_init_speed, location=[0, 50])
     car3 = car_env.car(id=2, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, 25])
+                       tar_speed=60.0 / 3.6, init_speed=temp_init_speed, location=[0, 25])
     car4 = car_env.car(id=3, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, 0])
+                       tar_speed=60.0 / 3.6, init_speed=temp_init_speed, location=[0, 0])
     car5 = car_env.car(id=4, role='follower', ingaged_in_platoon=False, tar_interDis=car_env.DES_PLATOON_INTER_DISTANCE,
-                       tar_speed=60.0 / 3.6, location=[0, -25])
+                       tar_speed=60.0 / 3.6, init_speed=temp_init_speed, location=[0, -25])
     # 将新车加入车队
     if len(Carlist) == 0:
         Carlist.append(car1)
@@ -480,9 +501,13 @@ def conventional_follow(STRATRGY):
 
     CarList_update_platoon_info(Carlist, des_platoon_size=5, build_platoon=True)
 
+    global output_file
     while True:
         # 时间戳更新
         time_tag += car_env.AI_DT
+
+        t_start = time.time()
+
         # 多车同时加入仿真的计算
         done = False
         car_env.CarList_calculate(Carlist, STRATEGY=STRATRGY, time_tag=time_tag, action=None)
@@ -494,8 +519,14 @@ def conventional_follow(STRATRGY):
             car_env.CarList_update_info_core(Carlist, car_env.UPDATE_TIME_PER_DIDA)
             turns += car_env.UPDATE_TIME_PER_DIDA
 
+        t_end = time.time()
+        # 输出计算的时间
+        oneline = '%f' % time_tag + ',%f' % (t_end - t_start)
+        output_file.write(oneline + '\n')
+
         # 判断仿真是否结束
         if done:
+            output_file.close()
             break
 
     my_plot.plot_data(Carlist,write_flag=True)
@@ -506,11 +537,11 @@ if __name__ == '__main__':
     if USE_RL_METHOD:
         if LOAD:
             eval()
-            # multi_strategy_eval()
         else:
             train()
     else:
         conventional_follow('ACC')
+
 
 
 

@@ -47,8 +47,8 @@ VAR_MIN = 0.005       # 0.05
 # LOAD = False
 LOAD = True
 
-CHANGE_LANE_USE_RL = True   # 换道场景中使用RL
-# CHANGE_LANE_USE_RL = False   # 换道场景中不使用RL
+# CHANGE_LANE_USE_RL = True   # 换道场景中使用RL
+CHANGE_LANE_USE_RL = False   # 换道场景中不使用RL
 
 OUTPUT_GRAPH = True
 # USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
@@ -586,8 +586,10 @@ def eval_trafficFlow():
         for th_ in range(len(CarList_list)):
             temp_carlist = CarList_list[th_]
             temp_mean_spacing = 0
-            if len(temp_carlist) > 1:
+            if len(temp_carlist) > 2:
                 for i in range(len(temp_carlist)-1):
+                    if i == 0:
+                        continue
                     temp_mean_spacing += (temp_carlist[i].location[1]-temp_carlist[i+1].location[1])
                 temp_mean_spacing = temp_mean_spacing/(len(temp_carlist)-1)
                 # 输出队列内部平均间隔

@@ -10,7 +10,7 @@ MAX_CAR_NUMBER = 5  # 最大的车辆数目
 MIN_ACC = -4
 MAX_ACC = 3.0#2.5
 
-MAX_V = 80 / 3.6
+MAX_V = 60 / 3.6
 TURN_MAX_V = 4.2
 TIME_TAG_UP_BOUND = 120
 ROAD_LENGTH = MAX_V * TIME_TAG_UP_BOUND
@@ -303,8 +303,8 @@ class car(object):
         if self.role == 'leader':
             car.__excute_foward(self)  # 启动车辆
             # 跟驰，或者启动测试
-            # test_method = 'leader_sin_wave'
-            test_method = 'leader_stop'
+            test_method = 'leader_sin_wave'
+            # test_method = 'leader_stop'
             if self.start_test == True:
                 car.__test_scenario(self, test_method, time_tag)
             else:
