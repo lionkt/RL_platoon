@@ -26,8 +26,8 @@ INIT_CAR_DISTANCE = car_env.INIT_CAR_DISTANCE  # 初始时车辆的间隔（原�
 TEST = 10
 
 
-LOAD_NN = False
-# LOAD_NN = True
+# LOAD_NN = False
+LOAD_NN = True
 OUTPUT_GRAPH = True
 # USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
 USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
@@ -197,7 +197,8 @@ def eval():
         Carlist.append(car1)
         Carlist.append(car2)
         Carlist.append(car3)
-        Carlist.append(car4)  # Carlist.append(car5)
+        Carlist.append(car4)
+        Carlist.append(car5)
     CarList_update_platoon_info(Carlist, des_platoon_size=len(Carlist), build_platoon=True)  # 把车辆加入车队
     s = car_env.reset(Carlist)
     done = False
