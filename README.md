@@ -1,9 +1,7 @@
-# Crown-s-Daily-Codes
+# RL_platoon
 ## 包含的内容：
 
-1. code snippers
+1. 面向cota2018的强化学习platoon longitudinal control代码
 
-2. hackerrank OJ
 
-3. 强化学习的代码
 
