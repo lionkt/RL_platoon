@@ -103,14 +103,37 @@ class car(object):
     def __follow_car_ACC(self, pure_interval, previous):
         assert previous, 'ACC跟驰前车为空'  # 如果previous为空则报警
         v1 = self.speed  # 自己的速度
-        v2 = previous.speed + AI_DT * previous.acc  # 前车的速度
-        lam_para = 0.1
-        epsilon = v1 - v2
-        T = DES_PLATOON_INTER_DISTANCE / (0.85 * MAX_V)
+        v2 = previous.speed #+ AI_DT * previous.acc  # 前车的速度
+
+        gap = DES_PLATOON_INTER_DISTANCE
+        epsilon_i = - pure_interval
+        epsilon_i_d = v1 - v2
+        discount = 0.9 #0.85
+        T = gap / (discount * MAX_V)
 
         # 固定车头时距的跟驰方式
-        sigma = -pure_interval + T * v1
-        tem_a = -(epsilon + lam_para * sigma) / T
+        lam_para = 0.15 #0.1
+        sigma = epsilon_i + T * v1
+        tem_a = -(epsilon_i_d + lam_para * sigma) / T
+        # 限幅
+        if (tem_a > MAX_ACC):
+            self.acc = MAX_ACC
+        elif (tem_a < MIN_ACC):
+            self.acc = MIN_ACC
+        else:
+            self.acc = tem_a
+
+    # 包含lead速度信息的acc
+    def __follow_car_LEAD_ACC(self, pure_interval, previous):
+        assert previous, 'ACC跟驰前车为空'  # 如果previous为空则报警
+        gap = DES_PLATOON_INTER_DISTANCE
+        delta_i = -pure_interval + gap
+        d_delta_i = self.speed - previous.speed
+        d_delta_lead = self.speed - self.leader.speed
+        k1 = 0.3
+        k2 = 1
+        k3 = 2
+        tem_a = -k1*delta_i - k2*d_delta_i - k3*d_delta_lead
         # 限幅
         if (tem_a > MAX_ACC):
             self.acc = MAX_ACC
@@ -124,7 +147,37 @@ class car(object):
         assert previous, 'CACC跟驰前车为空'  # 如果previous为空则报警
         assert self.leader, 'CACC不存在leader'
         gap = DES_PLATOON_INTER_DISTANCE
-        C_1 = 0.5
+        C_1 = 0.6 #0.5
+        w_n = 0.2 #0.2
+        xi = 1.2 #1
+        # 系数
+        alpha_1 = 1 - C_1
+        alpha_2 = C_1
+        alpha_3 = -(2 * xi - C_1 * (xi + sp.sqrt(xi * xi - 1))) * w_n
+        alpha_4 = - C_1 * (xi + sp.sqrt(xi * xi - 1)) * w_n
+        alpha_5 = -w_n * w_n
+        pre_acc = previous.acc
+        leader_acc = self.leader.acc
+        leader_speed = self.leader.speed
+        epsilon_i = -pure_interval + gap
+        d_epsilon_i = self.speed - previous.speed
+        # 核心公式
+        tem_a = alpha_1 * pre_acc + alpha_2 * leader_acc + alpha_3 * d_epsilon_i + alpha_4 * (
+            self.speed - leader_speed) + alpha_5 * epsilon_i
+        # 限幅
+        if (tem_a > MAX_ACC):
+            self.acc = MAX_ACC
+        elif (tem_a < MIN_ACC):
+            self.acc = MIN_ACC
+        else:
+            self.acc = tem_a
+
+    # 降级的CACC跟驰方法
+    def __follow_car_DOWNGRADE_CACC(self, pure_interval, previous):
+        assert previous, 'CACC跟驰前车为空'  # 如果previous为空则报警
+        assert self.leader, 'CACC不存在leader'
+        gap = DES_PLATOON_INTER_DISTANCE
+        C_1 = 1
         w_n = 0.2
         xi = 1
         # 系数
@@ -135,11 +188,12 @@ class car(object):
         alpha_5 = -w_n * w_n
         pre_acc = previous.acc
         leader_acc = self.leader.acc
+        leader_speed = self.leader.speed
         epsilon_i = -pure_interval + gap
         d_epsilon_i = self.speed - previous.speed
         # 核心公式
         tem_a = alpha_1 * pre_acc + alpha_2 * leader_acc + alpha_3 * d_epsilon_i + alpha_4 * (
-            self.speed - previous.speed) + alpha_5 * epsilon_i
+                self.speed - leader_speed) + alpha_5 * epsilon_i
         # 限幅
         if (tem_a > MAX_ACC):
             self.acc = MAX_ACC
@@ -171,11 +225,16 @@ class car(object):
             # 如果参加了车队
             if STRATEGY == 'ACC':
                 car.__follow_car_ACC(self, s, previous)
-            elif STRATEGY == 'CACC':
+            elif STRATEGY == 'LEAD_ACC':
+                car.__follow_car_LEAD_ACC(self, s, previous)
+            elif STRATEGY == 'CACC' or 'DOWNGRADE_CACC':
                 if (not self.leader) or (self.id == self.leader.id):
                     car.__follow_car_ACC(self, s, previous)  # 调用ACC来补救
                 else:
-                    car.__follow_car_CACC(self, s, previous)  # 调用正宗的CACC
+                    if STRATEGY == 'CACC':
+                        car.__follow_car_CACC(self, s, previous)  # 调用正宗的CACC
+                    elif STRATEGY == 'DOWNGRADE_CACC':
+                        car.__follow_car_DOWNGRADE_CACC(self, s, previous)  # 调用降级的CACC
 
         # 限幅
         if temp_a > MAX_ACC:
@@ -353,6 +412,8 @@ class car(object):
             alpha_2 = 0.0
             if STRATEGY == 'RL':
                 alpha_2 = 0.60 # 0.61(train)  # 0.635(eval)
+            else:
+                alpha_2 = 0.60
             # if strategy_flag == 1:  # 到达了multi-strategy的切换点
             #     alpha_2 = 0.8
             self.acc = alpha_2 * old_acc + (1 - alpha_2) * self.acc

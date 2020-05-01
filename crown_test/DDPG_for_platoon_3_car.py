@@ -44,11 +44,11 @@ BATCH_SIZE = 128     # 32 get better output than 16
 VAR_MIN = 0.005       # 0.05
 
 
-# LOAD = False
+# USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
+USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
 LOAD = True
-OUTPUT_GRAPH = True
-# USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
-USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
+# LOAD = False
+OUTPUT_GRAPH = False
 INIT_CAR_DISTANCE = 25  # 初始时车辆的间隔
 
 
@@ -57,14 +57,15 @@ ACTION_DIM = car_env.ACTION_DIM
 ACTION_BOUND = car_env.ACTION_BOUND
 
 # all placeholder for tf
-with tf.name_scope('S'):
-    S = tf.placeholder(tf.float32, shape=[None, STATE_DIM], name='s')
-with tf.name_scope('A'):
-    A = tf.placeholder(tf.float32, shape=[None, ACTION_DIM], name='a')
-with tf.name_scope('R'):
-    R = tf.placeholder(tf.float32, [None, 1], name='r')
-with tf.name_scope('S_'):
-    S_ = tf.placeholder(tf.float32, shape=[None, STATE_DIM], name='s_')
+if USE_RL_METHOD:
+    with tf.name_scope('S'):
+        S = tf.placeholder(tf.float32, shape=[None, STATE_DIM], name='s')
+    with tf.name_scope('A'):
+        A = tf.placeholder(tf.float32, shape=[None, ACTION_DIM], name='a')
+    with tf.name_scope('R'):
+        R = tf.placeholder(tf.float32, [None, 1], name='r')
+    with tf.name_scope('S_'):
+        S_ = tf.placeholder(tf.float32, shape=[None, STATE_DIM], name='s_')
 
 
 class Actor(object):
@@ -200,37 +201,38 @@ class Memory(object):
         indices = np.random.choice(self.capacity, size=n)
         return self.data[indices, :]
 
-# limit graphic RAM usage
-config = tf.ConfigProto()
-# config.gpu_options.allow_growth = True
-config.gpu_options.per_process_gpu_memory_fraction = 0.28  # 至少一块卡上留70%的显存，保证5个进程能跑起来
-sess = tf.Session(config=config)
+if USE_RL_METHOD:
+    # limit graphic RAM usage
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    # config.gpu_options.per_process_gpu_memory_fraction = 0.28  # 至少一块卡上留70%的显存，保证5个进程能跑起来
+    sess = tf.Session(config=config)
 
-# Create actor and critic for 2-car following.
-actor = Actor(sess, ACTION_DIM, ACTION_BOUND[1], LR_A, REPLACE_ITER_A)
-critic = Critic(sess, STATE_DIM, ACTION_DIM, LR_C, GAMMA, REPLACE_ITER_C, actor.a_)
-actor.add_grad_to_graph(critic.a_grads)
-M = Memory(MEMORY_CAPACITY, dims=2 * STATE_DIM + ACTION_DIM + 1)
+    # Create actor and critic for 2-car following.
+    actor = Actor(sess, ACTION_DIM, ACTION_BOUND[1], LR_A, REPLACE_ITER_A)
+    critic = Critic(sess, STATE_DIM, ACTION_DIM, LR_C, GAMMA, REPLACE_ITER_C, actor.a_)
+    actor.add_grad_to_graph(critic.a_grads)
+    M = Memory(MEMORY_CAPACITY, dims=2 * STATE_DIM + ACTION_DIM + 1)
 
-# Create actor and critic for 3-car following.
-# actor_new = Actor(sess, ACTION_DIM, ACTION_BOUND[1], LR_A, REPLACE_ITER_A)
-# critic_new = Critic(sess, STATE_DIM, ACTION_DIM, LR_C, GAMMA, REPLACE_ITER_C, actor_new.a_)
-# actor_new.add_grad_to_graph(critic_new.a_grads)
-# M_new = Memory(MEMORY_CAPACITY, dims=2 * STATE_DIM + ACTION_DIM + 1)
+    # Create actor and critic for 3-car following.
+    # actor_new = Actor(sess, ACTION_DIM, ACTION_BOUND[1], LR_A, REPLACE_ITER_A)
+    # critic_new = Critic(sess, STATE_DIM, ACTION_DIM, LR_C, GAMMA, REPLACE_ITER_C, actor_new.a_)
+    # actor_new.add_grad_to_graph(critic_new.a_grads)
+    # M_new = Memory(MEMORY_CAPACITY, dims=2 * STATE_DIM + ACTION_DIM + 1)
 
+    saver = tf.train.Saver()
+    # path = './' + 'NN_Data/3_cars_following/'
+    path = './Data/3_car3_following_good_networks/COTA2018-1st-wave/graph-20171026-1536'
+    if not os.path.exists(path):
+        os.mkdir(path)
 
-saver = tf.train.Saver()
-path = './' + 'NN_Data/3_cars_following/'
-if not os.path.exists(path):
-    os.mkdir(path)
+    if LOAD:
+        saver.restore(sess, tf.train.latest_checkpoint(path))
+    else:
+        sess.run(tf.global_variables_initializer())
 
-if LOAD:
-    saver.restore(sess, tf.train.latest_checkpoint(path))
-else:
-    sess.run(tf.global_variables_initializer())
-
-if OUTPUT_GRAPH:
-    tf.summary.FileWriter('DDPG_logs/3_cars_following/', graph=sess.graph)
+    if OUTPUT_GRAPH:
+        tf.summary.FileWriter('DDPG_logs/3_cars_following/', graph=sess.graph)
 
 
 def train():
@@ -354,7 +356,7 @@ def eval():
         Carlist.append(car2)
         Carlist.append(car3)
         Carlist.append(car4)
-        # Carlist.append(car5)
+        Carlist.append(car5)
     CarList_update_platoon_info(Carlist, des_platoon_size=len(Carlist), build_platoon=True)  # 把车辆加入车队
 
     s = car_env.reset(Carlist)
@@ -394,8 +396,7 @@ def eval():
         if done:
             break
 
-    my_plot.plot_data(Carlist, write_flag=True)
-
+    my_plot.plot_data(Carlist, output_path='./', write_flag=True)
 
 # 根据build_platoon，更新是否加入platoon的信息
 def CarList_update_platoon_info(Carlist, des_platoon_size, build_platoon):
@@ -508,7 +509,7 @@ def conventional_follow(STRATRGY):
         if done:
             break
 
-    my_plot.plot_data(Carlist,write_flag=True)
+    my_plot.plot_data(Carlist,output_path='./',write_flag=True)
 
 
 
@@ -520,7 +521,11 @@ if __name__ == '__main__':
         else:
             train()
     else:
-        conventional_follow('ACC')
+        # conventional_follow('ACC')
+        # conventional_follow('LEAD_ACC')
+
+        conventional_follow('CACC')
+        # conventional_follow('DOWNGRADE_CACC')
 
 
 
