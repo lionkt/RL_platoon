@@ -5,15 +5,19 @@ T2 = -1.09e-05*n.^2 + 0.05079*n +95.25;
 figure;
 plot(n, Tn,'linewidth',2);
 hold on;
-plot(n, T2,'linewidth',2);
+plot(n, T2,'-.','linewidth',2);
 grid on;
-xlabel('engine speed (r/min)');
-ylabel('engine torque (N*m)');
+xlabel('发动机转速 (r/min)');
+ylabel('发动机扭矩输出 (N*m)');
+legend('5次多项式','2次多项式');
 title('Engine Speed-Torque Function of 492Q Engine');
 
+%% 
 figure;
 plot(n ,abs(T2-Tn)./Tn * 100,'linewidth',2);
 grid on;
 xlabel('engine speed (r/min)');
 ylabel('Error amplitude (%)');
 title('Error Between Quadratic Fitting and Fifth-order Fitting');
+disp(['mean error',num2str(mean(abs(T2-Tn)./Tn * 100)),'%']);
+disp(['std error',num2str(std(abs(T2-Tn)./Tn * 100)),'%']);
