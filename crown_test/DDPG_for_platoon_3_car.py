@@ -44,8 +44,8 @@ BATCH_SIZE = 128     # 32 get better output than 16
 VAR_MIN = 0.005       # 0.05
 
 
-# USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
-USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
+USE_RL_METHOD = True    # 判断是用传统的跟驰控制，还是用RL控制
+# USE_RL_METHOD = False    # 判断是用传统的跟驰控制，还是用RL控制
 LOAD = True
 # LOAD = False
 OUTPUT_GRAPH = False
@@ -367,11 +367,17 @@ def eval():
 
         # 多车同时加入仿真的计算
         Carlist[0].calculate(Carlist[0], STRATEGY='ACC', time_tag=time_tag, action=None)  # 先算头车
-        Carlist[1].calculate(Carlist[0:2], STRATEGY='ACC', time_tag=time_tag, action=None)  # 先算第二辆
+        # Carlist[1].calculate(Carlist[0:2], STRATEGY='ACC', time_tag=time_tag, action=None)  # 先算第二辆
         for car_index in range(len(Carlist)):
-            if car_index <= 1:
+            if car_index == 0:
                 continue
-            if car_index == 2:
+            elif car_index == 1:
+                temp_list = []  # 3辆车的数组
+                temp_list.append(Carlist[0])
+                temp_list.append(Carlist[0])
+                temp_list.append(Carlist[car_index])
+                # continue
+            elif car_index == 2:
                 temp_list = []  # 3辆车的数组
                 temp_list.append(Carlist[car_index - 2])
                 temp_list.append(Carlist[car_index - 1])

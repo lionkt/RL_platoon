@@ -3,6 +3,8 @@ import scipy as sp
 
 # define boundary
 MAX_CAR_NUMBER = 5  # 最大的车辆数目
+TEST_METHOD = 'leader_sin_wave' # 'leader_stop'  # 测试的场景
+# TEST_METHOD = 'leader_stop'  # 测试的场景
 ### 半实物仿真的ACC参数
 # MIN_ACC = -10.0
 # MAX_ACC = 6.0
@@ -108,11 +110,11 @@ class car(object):
         gap = DES_PLATOON_INTER_DISTANCE
         epsilon_i = - pure_interval
         epsilon_i_d = v1 - v2
-        discount = 0.9 #0.85
+        discount = 0.85 #0.9
         T = gap / (discount * MAX_V)
 
         # 固定车头时距的跟驰方式
-        lam_para = 0.15 #0.1
+        lam_para = 0.15 #0.15
         sigma = epsilon_i + T * v1
         tem_a = -(epsilon_i_d + lam_para * sigma) / T
         # 限幅
@@ -147,7 +149,7 @@ class car(object):
         assert previous, 'CACC跟驰前车为空'  # 如果previous为空则报警
         assert self.leader, 'CACC不存在leader'
         gap = DES_PLATOON_INTER_DISTANCE
-        C_1 = 0.6 #0.5
+        C_1 = 0.65 #0.5
         w_n = 0.2 #0.2
         xi = 1.2 #1
         # 系数
@@ -362,7 +364,8 @@ class car(object):
         if self.role == 'leader':
             car.__excute_foward(self)  # 启动车辆
             # 跟驰，或者启动测试
-            test_method = 'leader_sin_wave'
+            test_method = TEST_METHOD
+            # test_method = 'leader_sin_wave'
             # test_method = 'leader_stop'
             if self.start_test == True:
                 car.__test_scenario(self, test_method, time_tag)
