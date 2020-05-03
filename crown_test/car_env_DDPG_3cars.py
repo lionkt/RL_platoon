@@ -9,8 +9,9 @@ TEST_METHOD = 'leader_sin_wave' # 'leader_stop'  # 测试的场景
 # MIN_ACC = -10.0
 # MAX_ACC = 6.0
 ### Acceleration-Deceleration Behaviour of Various Vehicle Types论文的参数
-MIN_ACC = -4    #4
-MAX_ACC = 3   #2.5
+p = 1
+MIN_ACC = -4*p    #4
+MAX_ACC = 3*p   #2.5
 
 MAX_V = 60 / 3.6    # 60 / 3.6
 TURN_MAX_V = 4.2
@@ -114,7 +115,7 @@ class car(object):
         T = gap / (discount * MAX_V)
 
         # 固定车头时距的跟驰方式
-        lam_para = 0.15 #0.15
+        lam_para = 0.1 #0.15
         sigma = epsilon_i + T * v1
         tem_a = -(epsilon_i_d + lam_para * sigma) / T
         # 限幅
@@ -149,9 +150,9 @@ class car(object):
         assert previous, 'CACC跟驰前车为空'  # 如果previous为空则报警
         assert self.leader, 'CACC不存在leader'
         gap = DES_PLATOON_INTER_DISTANCE
-        C_1 = 0.65 #0.5
+        C_1 = 0.65 #0.65
         w_n = 0.2 #0.2
-        xi = 1.2 #1
+        xi = 1.3 #1
         # 系数
         alpha_1 = 1 - C_1
         alpha_2 = C_1
@@ -216,8 +217,9 @@ class car(object):
         else:
             v1 = self.speed  # 自己的速度
             v2 = previous.speed  # 前车的速度
-            if (previous.acc < 0.0):
-                v2 += AI_DT * previous.acc
+            ### 下面这段code来自3D仿真平台，但测试发现会干扰此处的理论实验(20202/05/03)
+            # if (previous.acc < 0.0):
+            #     v2 += AI_DT * previous.acc
             v1 = v1 if v1 > 0 else 0.0
             v2 = v2 if v2 > 0 else 0.0
             s = car.__calc_pure_interDistance(self, previous)
@@ -316,37 +318,6 @@ class car(object):
                     else:
                         self.acc = car.__engine_slow_down_acc_curve(self, self.speed, p=0.9)
 
-    # 构建多种跟驰算法组合的策略
-    def __multi_strategy_selection(self, previous, action=None):
-        changing_flag = 0  # 0-ACC, 1-Reinforcement learning
-        speed_ok_flag = False
-        distance_ok_flag = False
-        v1 = self.speed  # 自己的速度
-        v2 = previous.speed  # 前车的速度
-        if (previous.acc < 0.0):
-            v2 += AI_DT * previous.acc
-        v1 = v1 if v1 > 0 else 0.0
-        v2 = v2 if v2 > 0 else 0.0
-        s = car.__calc_pure_interDistance(self, previous)  # 和前车的距离
-        changing_threshold_distance = 2  # 切换策略的距离阈值
-        changing_threshold_speed = 2  # 切换策略的速度阈值
-        # 选取策略
-        if s <= DES_PLATOON_INTER_DISTANCE + changing_threshold_distance:
-            distance_ok_flag = True
-        if abs(v1 - v2) <= changing_threshold_speed:
-            speed_ok_flag = True
-        if distance_ok_flag and speed_ok_flag:
-            changing_flag = 1
-        # 开始分情景执行策略
-        if changing_flag == 0:
-            if self.engaged_in_platoon:
-                car.__follow_car_for_platoon(self, 'ACC', previous)
-            else:
-                car.__follow_car(self, previous)
-        elif changing_flag == 1:
-            assert action, '在RL中输入的action为空'
-            self.acc = action  # 把输入的action当作下标，从动作空间中取值
-        return changing_flag
 
     # 车辆运动学的主函数
     def calculate(self, CarList, STRATEGY, time_tag, action=None):
@@ -382,8 +353,6 @@ class car(object):
                 # 如果运行reinforcement-learning
                 assert action, '在RL中输入的action为空'
                 self.acc = action  # 把输入的action当作下标，从动作空间中取值
-            elif STRATEGY == 'MULTI':
-                strategy_flag = car.__multi_strategy_selection(self, previous=precar, action=action)
             else:
                 if self.engaged_in_platoon:
                     car.__follow_car_for_platoon(self, STRATEGY, precar)  # 先默认车队的跟驰成员采用ACC方法
@@ -698,27 +667,27 @@ def get_reward_function(observation, post_jerk):
 def reset(CarList):
     obs_list = []
     obs = []
-    i = 0
-    for single_car in CarList:
-        if single_car.id == 0 or single_car.role == 'leader':
-            obs_list.append(0)
-            obs_list.append(INIT_CAR_DISTANCE * 2)
-        else:
-            obs_list.append(0)
-            obs_list.append(INIT_CAR_DISTANCE)
-        i += 1
-    leader_v = obs_list[0]
-    leader_y = obs_list[1]
+    # i = 0
+    # for single_car in CarList:
+    #     if single_car.id == 0 or single_car.role == 'leader':
+    #         obs_list.append(0)
+    #         obs_list.append(INIT_CAR_DISTANCE * 2)
+    #     else:
+    #         obs_list.append(0)
+    #         obs_list.append(INIT_CAR_DISTANCE)
+    #     i += 1
+    leader_v = 0 #obs_list[0]
+    leader_y = CarList[0].location[1] #obs_list[1]
     if len(CarList) == 1:
         print('ERROR: 车队中只有一辆车')
         return None
     else:
-        follower1_v = obs_list[2]
-        follower1_y = obs_list[3]
+        follower1_v = 0 #obs_list[2]
+        follower1_y = CarList[1].location[1]#obs_list[3]
         if len(CarList) == 2:
             return [-100, -100, -100]
-        follower2_v = obs_list[4]
-        follower2_y = obs_list[5]
+        follower2_v = 0 #obs_list[4]
+        follower2_y = CarList[2].location[1] #obs_list[5]
 
     pure_interDistance = follower1_y - follower2_y - CAR_LENGTH / 2 - CAR_LENGTH / 2
     delta_v_f2_with_f1 = follower1_v - follower2_v

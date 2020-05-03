@@ -231,7 +231,7 @@ actor.add_grad_to_graph(critic.a_grads)
 M = Memory(MEMORY_CAPACITY, dims=2 * STATE_DIM + ACTION_DIM + 1)
 
 saver = tf.train.Saver()
-path = './Data/'
+path = 'NN/'
 
 if LOAD:
     saver.restore(sess, tf.train.latest_checkpoint(path))
